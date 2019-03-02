@@ -90,8 +90,8 @@ declare namespace firebase {
       phoneCredential: firebase.auth.AuthCredential
     ): Promise<void>;
     updateProfile(profile: {
-      displayName: string | null;
-      photoURL: string | null;
+      displayName?: string | null;
+      photoURL?: string | null;
     }): Promise<void>;
   }
 
@@ -144,10 +144,13 @@ declare namespace firebase.functions {
   export interface HttpsCallable {
     (data?: any): Promise<HttpsCallableResult>;
   }
+  export interface HttpsCallableOptions {
+    timeout?: number;
+  }
   export class Functions {
     private constructor();
     useFunctionsEmulator(url: string): void;
-    httpsCallable(name: string): HttpsCallable;
+    httpsCallable(name: string, options?: HttpsCallableOptions): HttpsCallable;
   }
   export type ErrorStatus =
     | 'ok'
@@ -296,6 +299,12 @@ declare namespace firebase.auth {
     signInMethod: string;
   }
 
+  interface OAuthCredential extends AuthCredential {
+    idToken?: string;
+    accessToken?: string;
+    secret?: string;
+  }
+
   interface AuthProvider {
     providerId: string;
   }
@@ -330,7 +339,7 @@ declare namespace firebase.auth {
   class FacebookAuthProvider extends FacebookAuthProvider_Instance {
     static PROVIDER_ID: string;
     static FACEBOOK_SIGN_IN_METHOD: string;
-    static credential(token: string): firebase.auth.AuthCredential;
+    static credential(token: string): firebase.auth.OAuthCredential;
   }
   class FacebookAuthProvider_Instance implements firebase.auth.AuthProvider {
     addScope(scope: string): firebase.auth.AuthProvider;
@@ -343,7 +352,7 @@ declare namespace firebase.auth {
   class GithubAuthProvider extends GithubAuthProvider_Instance {
     static PROVIDER_ID: string;
     static GITHUB_SIGN_IN_METHOD: string;
-    static credential(token: string): firebase.auth.AuthCredential;
+    static credential(token: string): firebase.auth.OAuthCredential;
   }
   class GithubAuthProvider_Instance implements firebase.auth.AuthProvider {
     addScope(scope: string): firebase.auth.AuthProvider;
@@ -359,7 +368,7 @@ declare namespace firebase.auth {
     static credential(
       idToken?: string | null,
       accessToken?: string | null
-    ): firebase.auth.AuthCredential;
+    ): firebase.auth.OAuthCredential;
   }
   class GoogleAuthProvider_Instance implements firebase.auth.AuthProvider {
     addScope(scope: string): firebase.auth.AuthProvider;
@@ -375,7 +384,7 @@ declare namespace firebase.auth {
     credential(
       idToken?: string,
       accessToken?: string
-    ): firebase.auth.AuthCredential;
+    ): firebase.auth.OAuthCredential;
     setCustomParameters(
       customOAuthParameters: Object
     ): firebase.auth.AuthProvider;
@@ -433,7 +442,7 @@ declare namespace firebase.auth {
     static credential(
       token: string,
       secret: string
-    ): firebase.auth.AuthCredential;
+    ): firebase.auth.OAuthCredential;
   }
   class TwitterAuthProvider_Instance implements firebase.auth.AuthProvider {
     providerId: string;
