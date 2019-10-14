@@ -17,7 +17,7 @@ get-from-gstatic() {
 }
 
 SDK_FILES="firebase.js index.d.ts"
-SERVICES="app auth database storage messaging firestore functions"
+SERVICES="app auth database storage messaging firestore functions analytics"
 MAPS="app database storage messaging firestore functions"
 
 for file in $SDK_FILES; do
