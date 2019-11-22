@@ -1070,9 +1070,6 @@ declare namespace firebase {
 
   function firestore(app?: firebase.app.App): firebase.firestore.Firestore;
 
-  /**
-   * @webonly
-   */
   function functions(app?: firebase.app.App): firebase.functions.Functions;
 
   /**
@@ -1268,9 +1265,6 @@ declare namespace firebase.app {
      */
     storage(url?: string): firebase.storage.Storage;
     firestore(): firebase.firestore.Firestore;
-    /**
-     * @webonly
-     */
     functions(region?: string): firebase.functions.Functions;
     /**
      * Gets the {@link firebase.performance.Performance `Performance`} service for the
@@ -1631,9 +1625,6 @@ declare namespace firebase.remoteConfig {
   export type LogLevel = 'debug' | 'error' | 'silent';
 }
 
-/**
- * @webonly
- */
 declare namespace firebase.functions {
   /**
    * An HttpsCallableResult wraps a single result from a function call.
@@ -6899,7 +6890,7 @@ declare namespace firebase.storage {
         | null
         | ((a: UploadTaskSnapshot) => any),
       error?: ((a: Error) => any) | null,
-      complete?: (firebase.Unsubscribe) | null
+      complete?: firebase.Unsubscribe | null
     ): Function;
     /**
      * Pauses a running task. Has no effect on a paused or failed task.
@@ -7382,6 +7373,19 @@ declare namespace firebase.firestore {
    */
   export class Timestamp {
     /**
+     * Creates a new timestamp.
+     *
+     * @param seconds The number of seconds of UTC time since Unix epoch
+     *     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+     *     9999-12-31T23:59:59Z inclusive.
+     * @param nanoseconds The non-negative fractions of a second at nanosecond
+     *     resolution. Negative second values with fractions must still have
+     *     non-negative nanoseconds values that count forward in time. Must be
+     *     from 0 to 999,999,999 inclusive.
+     */
+    constructor(seconds: number, nanoseconds: number);
+    
+    /**
      * Creates a new timestamp with the current date, with millisecond precision.
      *
      * @return a new timestamp representing the current date.
@@ -7406,19 +7410,6 @@ declare namespace firebase.firestore {
      *     number of milliseconds.
      */
     static fromMillis(milliseconds: number): Timestamp;
-
-    /**
-     * Creates a new timestamp.
-     *
-     * @param seconds The number of seconds of UTC time since Unix epoch
-     *     1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-     *     9999-12-31T23:59:59Z inclusive.
-     * @param nanoseconds The non-negative fractions of a second at nanosecond
-     *     resolution. Negative second values with fractions must still have
-     *     non-negative nanoseconds values that count forward in time. Must be
-     *     from 0 to 999,999,999 inclusive.
-     */
-    constructor(seconds: number, nanoseconds: number);
 
     readonly seconds: number;
     readonly nanoseconds: number;
