@@ -28,7 +28,7 @@ mv index.d.ts firebase.d.ts
 
 for service in $SERVICES; do
   get-from-gstatic "firebase-$service.js"
-  [ $service != "analytics" ] && [ $service != "performance" ] && [ $service != "firestore" ] && [ $service != "functions" ] && get-from-gstatic "firebase-$service-externs.js"
+  [ $service != "remote-config" ] && [ $service != "analytics" ] && [ $service != "performance" ] && [ $service != "firestore" ] && [ $service != "functions" ] && get-from-gstatic "firebase-$service-externs.js"
 done
 
 for map in $MAPS; do
