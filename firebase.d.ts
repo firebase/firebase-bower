@@ -1006,6 +1006,81 @@ declare namespace firebase {
     uid: string;
   }
 
+  type FirebaseSignInProvider =
+    | 'custom'
+    | 'email'
+    | 'password'
+    | 'phone'
+    | 'anonymous'
+    | 'google.com'
+    | 'facebook.com'
+    | 'github.com'
+    | 'twitter.com'
+    | 'microsoft.com'
+    | 'apple.com';
+
+  interface FirebaseIdToken {
+    /** Always set to https://securetoken.google.com/PROJECT_ID */
+    iss: string;
+
+    /** Always set to PROJECT_ID */
+    aud: string;
+
+    /** The user's unique id */
+    sub: string;
+
+    /** The token issue time, in seconds since epoch */
+    iat: number;
+
+    /** The token expiry time, normally 'iat' + 3600 */
+    exp: number;
+
+    /** The user's unique id, must be equal to 'sub' */
+    user_id: string;
+
+    /** The time the user authenticated, normally 'iat' */
+    auth_time: number;
+
+    /** The sign in provider, only set when the provider is 'anonymous' */
+    provider_id?: 'anonymous';
+
+    /** The user's primary email */
+    email?: string;
+
+    /** The user's email verification status */
+    email_verified?: boolean;
+
+    /** The user's primary phone number */
+    phone_number?: string;
+
+    /** The user's display name */
+    name?: string;
+
+    /** The user's profile photo URL */
+    picture?: string;
+
+    /** Information on all identities linked to this user */
+    firebase: {
+      /** The primary sign-in provider */
+      sign_in_provider: FirebaseSignInProvider;
+
+      /** A map of providers to the user's list of unique identifiers from each provider */
+      identities?: { [provider in FirebaseSignInProvider]?: string[] };
+    };
+
+    /** Custom claims set by the developer */
+    [claim: string]: unknown;
+
+    // NO LONGER SUPPORTED. Use "sub" instead. (Not a jsdoc comment to avoid generating docs.)
+    uid?: never;
+  }
+
+  export type EmulatorMockTokenOptions = (
+    | { user_id: string }
+    | { sub: string }
+  ) &
+    Partial<FirebaseIdToken>;
+
   /**
    * Retrieves a Firebase {@link firebase.app.App app} instance.
    *
@@ -1469,19 +1544,46 @@ declare namespace firebase.appCheck {
   export interface AppCheck {
     /**
      * Activate AppCheck
-     * @param siteKeyOrOrovider - reCAPTCHA sitekey or custom token provider
+     * @param siteKeyOrProvider reCAPTCHA v3 site key (public key) or
+     * custom token provider.
+     * @param isTokenAutoRefreshEnabled If true, the SDK automatically
+     * refreshes App Check tokens as needed. If undefined, defaults to the
+     * value of `app.automaticDataCollectionEnabled`, which defaults to
+     * false and can be set in the app config.
      */
-    activate(siteKeyOrProvider: string | AppCheckProvider): void;
+    activate(
+      siteKeyOrProvider: string | AppCheckProvider,
+      isTokenAutoRefreshEnabled?: boolean
+    ): void;
+
+    /**
+     *
+     * @param isTokenAutoRefreshEnabled If true, the SDK automatically
+     * refreshes App Check tokens as needed. This overrides any value set
+     * during `activate()`.
+     */
+    setTokenAutoRefreshEnabled(isTokenAutoRefreshEnabled: boolean): void;
   }
 
+  /**
+   * An App Check provider. This can be either the built-in reCAPTCHA
+   * provider or a custom provider. For more on custom providers, see
+   * https://firebase.google.com/docs/app-check/web-custom-provider
+   */
   interface AppCheckProvider {
     /**
-     * returns an AppCheck token
+     * Returns an AppCheck token.
      */
     getToken(): Promise<AppCheckToken>;
   }
 
+  /**
+   * The token returned from an {@link firebase.appCheck.AppCheckProvider `AppCheckProvider`}.
+   */
   interface AppCheckToken {
+    /**
+     * The token string in JWT format.
+     */
     readonly token: string;
     /**
      * The local timestamp after which the token will expire.
@@ -5711,8 +5813,15 @@ declare namespace firebase.database {
      *
      * @param host the emulator host (ex: localhost)
      * @param port the emulator port (ex: 8080)
+     * @param options.mockUserToken the mock auth token to use for unit testing Security Rules
      */
-    useEmulator(host: string, port: number): void;
+    useEmulator(
+      host: string,
+      port: number,
+      options?: {
+        mockUserToken?: EmulatorMockTokenOptions;
+      }
+    ): void;
     /**
      * Disconnects from the server (all Database operations will be completed
      * offline).
@@ -7054,6 +7163,8 @@ declare namespace firebase.database {
     logger?: boolean | ((a: string) => any),
     persistent?: boolean
   ): any;
+
+  export type EmulatorMockTokenOptions = firebase.EmulatorMockTokenOptions;
 }
 
 declare namespace firebase.database.ServerValue {
@@ -9985,80 +10096,7 @@ declare namespace firebase.firestore {
     stack?: string;
   }
 
-  type FirebaseSignInProvider =
-    | 'custom'
-    | 'email'
-    | 'password'
-    | 'phone'
-    | 'anonymous'
-    | 'google.com'
-    | 'facebook.com'
-    | 'github.com'
-    | 'twitter.com'
-    | 'microsoft.com'
-    | 'apple.com';
-
-  interface FirebaseIdToken {
-    /** Always set to https://securetoken.google.com/PROJECT_ID */
-    iss: string;
-
-    /** Always set to PROJECT_ID */
-    aud: string;
-
-    /** The user's unique id */
-    sub: string;
-
-    /** The token issue time, in seconds since epoch */
-    iat: number;
-
-    /** The token expiry time, normally 'iat' + 3600 */
-    exp: number;
-
-    /** The user's unique id, must be equal to 'sub' */
-    user_id: string;
-
-    /** The time the user authenticated, normally 'iat' */
-    auth_time: number;
-
-    /** The sign in provider, only set when the provider is 'anonymous' */
-    provider_id?: 'anonymous';
-
-    /** The user's primary email */
-    email?: string;
-
-    /** The user's email verification status */
-    email_verified?: boolean;
-
-    /** The user's primary phone number */
-    phone_number?: string;
-
-    /** The user's display name */
-    name?: string;
-
-    /** The user's profile photo URL */
-    picture?: string;
-
-    /** Information on all identities linked to this user */
-    firebase: {
-      /** The primary sign-in provider */
-      sign_in_provider: FirebaseSignInProvider;
-
-      /** A map of providers to the user's list of unique identifiers from each provider */
-      identities?: { [provider in FirebaseSignInProvider]?: string[] };
-    };
-
-    /** Custom claims set by the developer */
-    [claim: string]: unknown;
-
-    // NO LONGER SUPPORTED. Use "sub" instead. (Not a jsdoc comment to avoid generating docs.)
-    uid?: never;
-  }
-
-  export type EmulatorMockTokenOptions = (
-    | { user_id: string }
-    | { sub: string }
-  ) &
-    Partial<FirebaseIdToken>;
+  export type EmulatorMockTokenOptions = firebase.EmulatorMockTokenOptions;
 }
 
 export default firebase;
