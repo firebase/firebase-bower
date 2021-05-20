@@ -1,0 +1,7 @@
+$ bower install firebase --save
+dependencies {
+  ...
+  implementation 'com.google.firebase:firebase-appindexing:20.0.0'
+  ...
+}
+      
