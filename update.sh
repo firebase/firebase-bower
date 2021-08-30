@@ -16,19 +16,11 @@ get-from-gstatic() {
   fi
 }
 
-SDK_FILES="firebase.js index.d.ts"
-SERVICES="app auth database storage messaging firestore functions performance analytics remote-config"
-MAPS="app database storage messaging firestore functions performance analytics remote-config"
-
-for file in $SDK_FILES; do
-  get-from-gstatic $file
-done
-
-mv index.d.ts firebase.d.ts
+SERVICES="app auth database storage messaging firestore functions performance analytics remote-config app-check"
+MAPS="app database storage messaging firestore functions performance analytics remote-config app-check"
 
 for service in $SERVICES; do
   get-from-gstatic "firebase-$service.js"
-  [ $service != "remote-config" ] && [ $service != "analytics" ] && [ $service != "performance" ] && [ $service != "firestore" ] && [ $service != "functions" ] && get-from-gstatic "firebase-$service-externs.js"
 done
 
 for map in $MAPS; do
