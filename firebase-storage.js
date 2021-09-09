@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -1173,14 +1173,12 @@ function validateNumber(argument, minValue, maxValue, value) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-function makeUrl(urlPart, host) {
-    const protocolMatch = host.match(/^(\w+):\/\/.+/);
-    const protocol = protocolMatch === null || protocolMatch === void 0 ? void 0 : protocolMatch[1];
+function makeUrl(urlPart, host, protocol) {
     let origin = host;
     if (protocol == null) {
         origin = `https://${host}`;
     }
-    return `${origin}/v0${urlPart}`;
+    return `${protocol}://${origin}/v0${urlPart}`;
 }
 function makeQueryString(params) {
     const encode = encodeURIComponent;
@@ -2015,7 +2013,7 @@ function fromResourceString(service, resourceString, mappings) {
     const resource = obj;
     return fromResource(service, resource, mappings);
 }
-function downloadUrlFromResourceString(metadata, resourceString, host) {
+function downloadUrlFromResourceString(metadata, resourceString, host, protocol) {
     const obj = jsonObjectOrNull(resourceString);
     if (obj === null) {
         return null;
@@ -2035,7 +2033,7 @@ function downloadUrlFromResourceString(metadata, resourceString, host) {
         const bucket = metadata['bucket'];
         const path = metadata['fullPath'];
         const urlPart = '/b/' + encode(bucket) + '/o/' + encode(path);
-        const base = makeUrl(urlPart, host);
+        const base = makeUrl(urlPart, host, protocol);
         const queryString = makeQueryString({
             alt: 'media',
             token
@@ -2176,7 +2174,7 @@ function downloadUrlHandler(service, mappings) {
     function handler(xhr, text) {
         const metadata = fromResourceString(service, text, mappings);
         handlerCheck(metadata !== null);
-        return downloadUrlFromResourceString(metadata, text, service.host);
+        return downloadUrlFromResourceString(metadata, text, service.host, service._protocol);
     }
     return handler;
 }
@@ -2226,7 +2224,7 @@ function objectErrorHandler(location) {
 }
 function getMetadata$2(service, location, mappings) {
     const urlPart = location.fullServerUrl();
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'GET';
     const timeout = service.maxOperationRetryTime;
     const requestInfo = new RequestInfo(url, method, metadataHandler(service, mappings), timeout);
@@ -2251,7 +2249,7 @@ function list$2(service, location, delimiter, pageToken, maxResults) {
         urlParams['maxResults'] = maxResults;
     }
     const urlPart = location.bucketOnlyServerUrl();
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'GET';
     const timeout = service.maxOperationRetryTime;
     const requestInfo = new RequestInfo(url, method, listHandler(service, location.bucket), timeout);
@@ -2261,7 +2259,7 @@ function list$2(service, location, delimiter, pageToken, maxResults) {
 }
 function getDownloadUrl(service, location, mappings) {
     const urlPart = location.fullServerUrl();
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'GET';
     const timeout = service.maxOperationRetryTime;
     const requestInfo = new RequestInfo(url, method, downloadUrlHandler(service, mappings), timeout);
@@ -2270,7 +2268,7 @@ function getDownloadUrl(service, location, mappings) {
 }
 function updateMetadata$2(service, location, metadata, mappings) {
     const urlPart = location.fullServerUrl();
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'PATCH';
     const body = toResourceString(metadata, mappings);
     const headers = { 'Content-Type': 'application/json; charset=utf-8' };
@@ -2283,7 +2281,7 @@ function updateMetadata$2(service, location, metadata, mappings) {
 }
 function deleteObject$2(service, location) {
     const urlPart = location.fullServerUrl();
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'DELETE';
     const timeout = service.maxOperationRetryTime;
     function handler(_xhr, _text) { }
@@ -2342,7 +2340,7 @@ function multipartUpload(service, location, mappings, blob, metadata) {
         throw cannotSliceBlob();
     }
     const urlParams = { name: metadata_['fullPath'] };
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'POST';
     const timeout = service.maxUploadRetryTime;
     const requestInfo = new RequestInfo(url, method, metadataHandler(service, mappings), timeout);
@@ -2383,7 +2381,7 @@ function createResumableUpload(service, location, mappings, blob, metadata) {
     const urlPart = location.bucketOnlyServerUrl();
     const metadataForUpload = metadataForUpload_(location, blob, metadata);
     const urlParams = { name: metadataForUpload['fullPath'] };
-    const url = makeUrl(urlPart, service.host);
+    const url = makeUrl(urlPart, service.host, service._protocol);
     const method = 'POST';
     const headers = {
         'X-Goog-Upload-Protocol': 'resumable',
@@ -3514,7 +3512,8 @@ function extractBucket(host, config) {
     return Location.makeFromBucketSpec(bucketString, host);
 }
 function connectStorageEmulator$1(storage, host, port, options = {}) {
-    storage.host = `http://${host}:${port}`;
+    storage.host = `${host}:${port}`;
+    storage._protocol = 'http';
     const { mockUserToken } = options;
     if (mockUserToken) {
         storage._overrideAuthToken =
@@ -3554,9 +3553,9 @@ class FirebaseStorageImpl {
          * This string can be in the formats:
          * - host
          * - host:port
-         * - protocol://host:port
          */
         this._host = DEFAULT_HOST;
+        this._protocol = 'https';
         this._appId = null;
         this._deleted = false;
         this._maxOperationRetryTime = DEFAULT_MAX_OPERATION_RETRY_TIME;
@@ -3569,14 +3568,13 @@ class FirebaseStorageImpl {
             this._bucket = extractBucket(this._host, this.app.options);
         }
     }
+    /**
+     * The host string for this service, in the form of `host` or
+     * `host:port`.
+     */
     get host() {
         return this._host;
     }
-    /**
-     * Set host string for this service.
-     * @param host - host string in the form of host, host:port,
-     * or protocol://host:port
-     */
     set host(host) {
         this._host = host;
         if (this._url != null) {
@@ -3680,7 +3678,7 @@ class FirebaseStorageImpl {
 }
 
 const name = "@firebase/storage";
-const version = "0.8.1";
+const version = "0.8.2";
 
 /**
  * @license
@@ -3723,7 +3721,7 @@ const STORAGE_TYPE = 'storage';
  * Uploads data to this object's location.
  * The upload is not resumable.
  * @public
- * @param ref - StorageReference where data should be uploaded.
+ * @param ref - {@link StorageReference} where data should be uploaded.
  * @param data - The data to upload.
  * @param metadata - Metadata for the data to upload.
  * @returns A Promise containing an UploadResult
@@ -3736,7 +3734,7 @@ function uploadBytes(ref, data, metadata) {
  * Uploads a string to this object's location.
  * The upload is not resumable.
  * @public
- * @param ref - StorageReference where string should be uploaded.
+ * @param ref - {@link StorageReference} where string should be uploaded.
  * @param value - The string to upload.
  * @param format - The format of the string to upload.
  * @param metadata - Metadata for the string to upload.
@@ -3750,7 +3748,7 @@ function uploadString(ref, value, format, metadata) {
  * Uploads data to this object's location.
  * The upload can be paused and resumed, and exposes progress updates.
  * @public
- * @param ref - StorageReference where data should be uploaded.
+ * @param ref - {@link StorageReference} where data should be uploaded.
  * @param data - The data to upload.
  * @param metadata - Metadata for the data to upload.
  * @returns An UploadTask
@@ -3885,7 +3883,8 @@ function getStorage(app = getApp(), bucketUrl) {
  * @param storage - The {@link FirebaseStorage} instance
  * @param host - The emulator host (ex: localhost)
  * @param port - The emulator port (ex: 5001)
- * @param options.mockUserToken - the mock auth token to use for unit testing Security Rules.
+ * @param options - Emulator options. `options.mockUserToken` is the mock auth
+ * token to use for unit testing Security Rules.
  * @public
  */
 function connectStorageEmulator(storage, host, port, options = {}) {

@@ -1,4 +1,4 @@
-import { _getProvider, getApp, SDK_VERSION, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js';
+import { _getProvider, getApp, SDK_VERSION, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -1491,6 +1491,23 @@ function _fail(authOrCode, ...rest) {
 function _createError(authOrCode, ...rest) {
     return createErrorInternal(authOrCode, ...rest);
 }
+function _errorWithCustomMessage(auth, code, message) {
+    const errorMap = Object.assign(Object.assign({}, prodErrorMap()), { [code]: message });
+    const factory = new ErrorFactory('auth', 'Firebase', errorMap);
+    return factory.create(code, {
+        appName: auth.name,
+    });
+}
+function _assertInstanceOf(auth, object, instance) {
+    const constructorInstance = instance;
+    if (!(object instanceof constructorInstance)) {
+        if (constructorInstance.name !== object.constructor.name) {
+            _fail(auth, "argument-error" /* ARGUMENT_ERROR */);
+        }
+        throw _errorWithCustomMessage(auth, "argument-error" /* ARGUMENT_ERROR */, `Type of ${object.constructor.name} does not match expected instance.` +
+            `Did you pass a reference from a different Auth SDK?`);
+    }
+}
 function createErrorInternal(authOrCode, ...rest) {
     if (typeof authOrCode !== 'string') {
         const code = rest[0];
@@ -1909,7 +1926,9 @@ const SERVER_ERROR_MAP = {
     ["MISSING_MFA_ENROLLMENT_ID" /* MISSING_MFA_ENROLLMENT_ID */]: "missing-multi-factor-info" /* MISSING_MFA_INFO */,
     ["MISSING_MFA_PENDING_CREDENTIAL" /* MISSING_MFA_PENDING_CREDENTIAL */]: "missing-multi-factor-session" /* MISSING_MFA_SESSION */,
     ["SECOND_FACTOR_EXISTS" /* SECOND_FACTOR_EXISTS */]: "second-factor-already-in-use" /* SECOND_FACTOR_ALREADY_ENROLLED */,
-    ["SECOND_FACTOR_LIMIT_EXCEEDED" /* SECOND_FACTOR_LIMIT_EXCEEDED */]: "maximum-second-factor-count-exceeded" /* SECOND_FACTOR_LIMIT_EXCEEDED */
+    ["SECOND_FACTOR_LIMIT_EXCEEDED" /* SECOND_FACTOR_LIMIT_EXCEEDED */]: "maximum-second-factor-count-exceeded" /* SECOND_FACTOR_LIMIT_EXCEEDED */,
+    // Blocking functions related errors.
+    ["BLOCKING_FUNCTION_ERROR_RESPONSE" /* BLOCKING_FUNCTION_ERROR_RESPONSE */]: "internal-error" /* INTERNAL_ERROR */,
 };
 
 /**
@@ -1981,7 +2000,7 @@ async function _performFetchWithErrorHandling(auth, customErrorMap, fetchFn) {
         }
         else {
             const errorMessage = response.ok ? json.errorMessage : json.error.message;
-            const serverErrorCode = errorMessage.split(' : ')[0];
+            const [serverErrorCode, serverErrorMessage] = errorMessage.split(' : ');
             if (serverErrorCode === "FEDERATED_USER_ID_ALREADY_LINKED" /* FEDERATED_USER_ID_ALREADY_LINKED */) {
                 throw _makeTaggedError(auth, "credential-already-in-use" /* CREDENTIAL_ALREADY_IN_USE */, json);
             }
@@ -1992,7 +2011,12 @@ async function _performFetchWithErrorHandling(auth, customErrorMap, fetchFn) {
                 serverErrorCode
                     .toLowerCase()
                     .replace(/[_\s]+/g, '-');
-            _fail(auth, authError);
+            if (serverErrorMessage) {
+                throw _errorWithCustomMessage(auth, authError, serverErrorMessage);
+            }
+            else {
+                _fail(auth, authError);
+            }
         }
     }
     catch (e) {
@@ -8930,7 +8954,7 @@ const _POLL_WINDOW_CLOSE_TIMEOUT = new Delay(2000, 10000);
  */
 async function signInWithPopup(auth, provider, resolver) {
     const authInternal = _castAuth(auth);
-    _assert(provider instanceof FederatedAuthProvider, auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(auth, provider, FederatedAuthProvider);
     const resolverInternal = _withDefaultResolver(authInternal, resolver);
     const action = new PopupOperation(authInternal, "signInViaPopup" /* SIGN_IN_VIA_POPUP */, provider, resolverInternal);
     return action.executeNotNull();
@@ -8962,7 +8986,7 @@ async function signInWithPopup(auth, provider, resolver) {
  */
 async function reauthenticateWithPopup(user, provider, resolver) {
     const userInternal = getModularInstance(user);
-    _assert(provider instanceof FederatedAuthProvider, userInternal.auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(userInternal.auth, provider, FederatedAuthProvider);
     const resolverInternal = _withDefaultResolver(userInternal.auth, resolver);
     const action = new PopupOperation(userInternal.auth, "reauthViaPopup" /* REAUTH_VIA_POPUP */, provider, resolverInternal, userInternal);
     return action.executeNotNull();
@@ -8993,7 +9017,7 @@ async function reauthenticateWithPopup(user, provider, resolver) {
  */
 async function linkWithPopup(user, provider, resolver) {
     const userInternal = getModularInstance(user);
-    _assert(provider instanceof FederatedAuthProvider, userInternal.auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(userInternal.auth, provider, FederatedAuthProvider);
     const resolverInternal = _withDefaultResolver(userInternal.auth, resolver);
     const action = new PopupOperation(userInternal.auth, "linkViaPopup" /* LINK_VIA_POPUP */, provider, resolverInternal, userInternal);
     return action.executeNotNull();
@@ -9231,7 +9255,7 @@ function signInWithRedirect(auth, provider, resolver) {
 }
 async function _signInWithRedirect(auth, provider, resolver) {
     const authInternal = _castAuth(auth);
-    _assert(provider instanceof FederatedAuthProvider, auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(auth, provider, FederatedAuthProvider);
     const resolverInternal = _withDefaultResolver(authInternal, resolver);
     await _setPendingRedirectStatus(resolverInternal, authInternal);
     return resolverInternal._openRedirect(authInternal, provider, "signInViaRedirect" /* SIGN_IN_VIA_REDIRECT */);
@@ -9269,7 +9293,7 @@ function reauthenticateWithRedirect(user, provider, resolver) {
 }
 async function _reauthenticateWithRedirect(user, provider, resolver) {
     const userInternal = getModularInstance(user);
-    _assert(provider instanceof FederatedAuthProvider, userInternal.auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(userInternal.auth, provider, FederatedAuthProvider);
     // Allow the resolver to error before persisting the redirect user
     const resolverInternal = _withDefaultResolver(userInternal.auth, resolver);
     await _setPendingRedirectStatus(resolverInternal, userInternal.auth);
@@ -9306,7 +9330,7 @@ function linkWithRedirect(user, provider, resolver) {
 }
 async function _linkWithRedirect(user, provider, resolver) {
     const userInternal = getModularInstance(user);
-    _assert(provider instanceof FederatedAuthProvider, userInternal.auth, "argument-error" /* ARGUMENT_ERROR */);
+    _assertInstanceOf(userInternal.auth, provider, FederatedAuthProvider);
     // Allow the resolver to error before persisting the redirect user
     const resolverInternal = _withDefaultResolver(userInternal.auth, resolver);
     await _assertLinkedStatus(false, userInternal, provider.providerId);
@@ -10106,7 +10130,7 @@ class PhoneMultiFactorGenerator {
 }
 
 var name = "@firebase/auth";
-var version = "0.17.1";
+var version = "0.17.2";
 
 /**
  * @license
@@ -10270,7 +10294,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

@@ -1,4 +1,4 @@
-import { getApp, _getProvider, registerVersion, _registerComponent } from 'https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js';
+import { getApp, _getProvider, registerVersion, _registerComponent } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -516,10 +516,12 @@ class ContextProvider {
     async getAppCheckToken() {
         if (this.appCheck) {
             const result = await this.appCheck.getToken();
-            // If getToken() fails, it will still return a dummy token that also has
-            // an error field containing the error message. We will send any token
-            // provided here and show an error if/when it is rejected by the functions
-            // endpoint.
+            if (result.error) {
+                // Do not send the App Check header to the functions endpoint if
+                // there was an error from the App Check exchange endpoint. The App
+                // Check SDK will already have logged the error to console.
+                return null;
+            }
             return result.token;
         }
         return null;
@@ -763,7 +765,7 @@ function registerFunctions(fetchImpl) {
 }
 
 const name = "@firebase/functions";
-const version = "0.7.0";
+const version = "0.7.1";
 
 /**
  * @license
@@ -783,7 +785,7 @@ const version = "0.7.0";
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)
