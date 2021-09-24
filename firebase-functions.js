@@ -1,35 +1,4 @@
-import { getApp, _getProvider, registerVersion, _registerComponent } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-    return extendStatics(d, b);
-};
-
-function __extends(d, b) {
-    if (typeof b !== "function" && b !== null)
-        throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
+import { registerVersion, _registerComponent, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
 
 /**
  * @license
@@ -47,57 +16,106 @@ function __extends(d, b) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var ERROR_NAME = 'FirebaseError';
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * @fileoverview Standardized Firebase Error.
+ *
+ * Usage:
+ *
+ *   // Typescript string literals for type-safe codes
+ *   type Err =
+ *     'unknown' |
+ *     'object-not-found'
+ *     ;
+ *
+ *   // Closure enum for type-safe error codes
+ *   // at-enum {string}
+ *   var Err = {
+ *     UNKNOWN: 'unknown',
+ *     OBJECT_NOT_FOUND: 'object-not-found',
+ *   }
+ *
+ *   let errors: Map<Err, string> = {
+ *     'generic-error': "Unknown error",
+ *     'file-not-found': "Could not find file: {$file}",
+ *   };
+ *
+ *   // Type-safe function - must pass a valid error code as param.
+ *   let error = new ErrorFactory<Err>('service', 'Service', errors);
+ *
+ *   ...
+ *   throw error.create(Err.GENERIC);
+ *   ...
+ *   throw error.create(Err.FILE_NOT_FOUND, {'file': fileName});
+ *   ...
+ *   // Service: Could not file file: foo.txt (service/file-not-found).
+ *
+ *   catch (e) {
+ *     assert(e.message === "Could not find file: foo.txt.");
+ *     if (e.code === 'service/file-not-found') {
+ *       console.log("Could not read file: " + e['file']);
+ *     }
+ *   }
+ */
+const ERROR_NAME = 'FirebaseError';
 // Based on code from:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-var FirebaseError = /** @class */ (function (_super) {
-    __extends(FirebaseError, _super);
-    function FirebaseError(code, message, customData) {
-        var _this = _super.call(this, message) || this;
-        _this.code = code;
-        _this.customData = customData;
-        _this.name = ERROR_NAME;
+class FirebaseError extends Error {
+    constructor(code, message, customData) {
+        super(message);
+        this.code = code;
+        this.customData = customData;
+        this.name = ERROR_NAME;
         // Fix For ES5
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-        Object.setPrototypeOf(_this, FirebaseError.prototype);
+        Object.setPrototypeOf(this, FirebaseError.prototype);
         // Maintains proper stack trace for where our error was thrown.
         // Only available on V8.
         if (Error.captureStackTrace) {
-            Error.captureStackTrace(_this, ErrorFactory.prototype.create);
+            Error.captureStackTrace(this, ErrorFactory.prototype.create);
         }
-        return _this;
     }
-    return FirebaseError;
-}(Error));
-var ErrorFactory = /** @class */ (function () {
-    function ErrorFactory(service, serviceName, errors) {
+}
+class ErrorFactory {
+    constructor(service, serviceName, errors) {
         this.service = service;
         this.serviceName = serviceName;
         this.errors = errors;
     }
-    ErrorFactory.prototype.create = function (code) {
-        var data = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            data[_i - 1] = arguments[_i];
-        }
-        var customData = data[0] || {};
-        var fullCode = this.service + "/" + code;
-        var template = this.errors[code];
-        var message = template ? replaceTemplate(template, customData) : 'Error';
+    create(code, ...data) {
+        const customData = data[0] || {};
+        const fullCode = `${this.service}/${code}`;
+        const template = this.errors[code];
+        const message = template ? replaceTemplate(template, customData) : 'Error';
         // Service Name: Error message (service/code).
-        var fullMessage = this.serviceName + ": " + message + " (" + fullCode + ").";
-        var error = new FirebaseError(fullCode, fullMessage, customData);
+        const fullMessage = `${this.serviceName}: ${message} (${fullCode}).`;
+        const error = new FirebaseError(fullCode, fullMessage, customData);
         return error;
-    };
-    return ErrorFactory;
-}());
+    }
+}
 function replaceTemplate(template, data) {
-    return template.replace(PATTERN, function (_, key) {
-        var value = data[key];
-        return value != null ? String(value) : "<" + key + "?>";
+    return template.replace(PATTERN, (_, key) => {
+        const value = data[key];
+        return value != null ? String(value) : `<${key}?>`;
     });
 }
-var PATTERN = /\{\$([^}]+)}/g;
+const PATTERN = /\{\$([^}]+)}/g;
 
 /**
  * @license
@@ -765,7 +783,7 @@ function registerFunctions(fetchImpl) {
 }
 
 const name = "@firebase/functions";
-const version = "0.7.1";
+const version = "0.7.2";
 
 /**
  * @license
@@ -785,7 +803,7 @@ const version = "0.7.1";
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)

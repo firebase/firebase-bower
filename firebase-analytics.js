@@ -1,41 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-    return extendStatics(d, b);
-};
-
-function __extends(d, b) {
-    if (typeof b !== "function" && b !== null)
-        throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-function __spreadArray(to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
-}
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
 
 /**
  * @license
@@ -53,7 +16,6 @@ function __spreadArray(to, from) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var _a;
 /**
  * The JS SDK supports 5 log levels and also allows a user the ability to
  * silence the logs altogether.
@@ -74,7 +36,7 @@ var LogLevel;
     LogLevel[LogLevel["ERROR"] = 4] = "ERROR";
     LogLevel[LogLevel["SILENT"] = 5] = "SILENT";
 })(LogLevel || (LogLevel = {}));
-var levelStringToEnum = {
+const levelStringToEnum = {
     'debug': LogLevel.DEBUG,
     'verbose': LogLevel.VERBOSE,
     'info': LogLevel.INFO,
@@ -85,50 +47,46 @@ var levelStringToEnum = {
 /**
  * The default log level
  */
-var defaultLogLevel = LogLevel.INFO;
+const defaultLogLevel = LogLevel.INFO;
 /**
  * By default, `console.debug` is not displayed in the developer console (in
  * chrome). To avoid forcing users to have to opt-in to these logs twice
  * (i.e. once for firebase, and once in the console), we are sending `DEBUG`
  * logs to the `console.log` function.
  */
-var ConsoleMethod = (_a = {},
-    _a[LogLevel.DEBUG] = 'log',
-    _a[LogLevel.VERBOSE] = 'log',
-    _a[LogLevel.INFO] = 'info',
-    _a[LogLevel.WARN] = 'warn',
-    _a[LogLevel.ERROR] = 'error',
-    _a);
+const ConsoleMethod = {
+    [LogLevel.DEBUG]: 'log',
+    [LogLevel.VERBOSE]: 'log',
+    [LogLevel.INFO]: 'info',
+    [LogLevel.WARN]: 'warn',
+    [LogLevel.ERROR]: 'error'
+};
 /**
  * The default log handler will forward DEBUG, VERBOSE, INFO, WARN, and ERROR
  * messages on to their corresponding console counterparts (if the log method
  * is supported by the current log level)
  */
-var defaultLogHandler = function (instance, logType) {
-    var args = [];
-    for (var _i = 2; _i < arguments.length; _i++) {
-        args[_i - 2] = arguments[_i];
-    }
+const defaultLogHandler = (instance, logType, ...args) => {
     if (logType < instance.logLevel) {
         return;
     }
-    var now = new Date().toISOString();
-    var method = ConsoleMethod[logType];
+    const now = new Date().toISOString();
+    const method = ConsoleMethod[logType];
     if (method) {
-        console[method].apply(console, __spreadArray(["[" + now + "]  " + instance.name + ":"], args));
+        console[method](`[${now}]  ${instance.name}:`, ...args);
     }
     else {
-        throw new Error("Attempted to log a message with an invalid logType (value: " + logType + ")");
+        throw new Error(`Attempted to log a message with an invalid logType (value: ${logType})`);
     }
 };
-var Logger = /** @class */ (function () {
+class Logger {
     /**
      * Gives you an instance of a Logger to capture messages according to
      * Firebase's logging scheme.
      *
      * @param name The name that the logs will be associated with
      */
-    function Logger(name) {
+    constructor(name) {
         this.name = name;
         /**
          * The log level of the given Logger instance.
@@ -144,94 +102,78 @@ var Logger = /** @class */ (function () {
          */
         this._userLogHandler = null;
     }
-    Object.defineProperty(Logger.prototype, "logLevel", {
-        get: function () {
-            return this._logLevel;
-        },
-        set: function (val) {
-            if (!(val in LogLevel)) {
-                throw new TypeError("Invalid value \"" + val + "\" assigned to `logLevel`");
-            }
-            this._logLevel = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    get logLevel() {
+        return this._logLevel;
+    }
+    set logLevel(val) {
+        if (!(val in LogLevel)) {
+            throw new TypeError(`Invalid value "${val}" assigned to \`logLevel\``);
+        }
+        this._logLevel = val;
+    }
     // Workaround for setter/getter having to be the same type.
-    Logger.prototype.setLogLevel = function (val) {
+    setLogLevel(val) {
         this._logLevel = typeof val === 'string' ? levelStringToEnum[val] : val;
-    };
-    Object.defineProperty(Logger.prototype, "logHandler", {
-        get: function () {
-            return this._logHandler;
-        },
-        set: function (val) {
-            if (typeof val !== 'function') {
-                throw new TypeError('Value assigned to `logHandler` must be a function');
-            }
-            this._logHandler = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Logger.prototype, "userLogHandler", {
-        get: function () {
-            return this._userLogHandler;
-        },
-        set: function (val) {
-            this._userLogHandler = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get logHandler() {
+        return this._logHandler;
+    }
+    set logHandler(val) {
+        if (typeof val !== 'function') {
+            throw new TypeError('Value assigned to `logHandler` must be a function');
+        }
+        this._logHandler = val;
+    }
+    get userLogHandler() {
+        return this._userLogHandler;
+    }
+    set userLogHandler(val) {
+        this._userLogHandler = val;
+    }
     /**
      * The functions below are all based on the `console` interface
      */
-    Logger.prototype.debug = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.DEBUG], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.DEBUG], args));
-    };
-    Logger.prototype.log = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.VERBOSE], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.VERBOSE], args));
-    };
-    Logger.prototype.info = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.INFO], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.INFO], args));
-    };
-    Logger.prototype.warn = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.WARN], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.WARN], args));
-    };
-    Logger.prototype.error = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.ERROR], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.ERROR], args));
-    };
-    return Logger;
-}());
+    debug(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.DEBUG, ...args);
+        this._logHandler(this, LogLevel.DEBUG, ...args);
+    }
+    log(...args) {
+        this._userLogHandler &&
+            this._userLogHandler(this, LogLevel.VERBOSE, ...args);
+        this._logHandler(this, LogLevel.VERBOSE, ...args);
+    }
+    info(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.INFO, ...args);
+        this._logHandler(this, LogLevel.INFO, ...args);
+    }
+    warn(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.WARN, ...args);
+        this._logHandler(this, LogLevel.WARN, ...args);
+    }
+    error(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.ERROR, ...args);
+        this._logHandler(this, LogLevel.ERROR, ...args);
+    }
+}
 
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 function isBrowserExtension() {
-    var runtime = typeof chrome === 'object'
+    const runtime = typeof chrome === 'object'
         ? chrome.runtime
         : typeof browser === 'object'
             ? browser.runtime
@@ -243,7 +185,7 @@ function isBrowserExtension() {
  * @return true if indexedDB is supported by current browser/service worker context
  */
 function isIndexedDBAvailable() {
-    return 'indexedDB' in self && indexedDB != null;
+    return typeof indexedDB === 'object';
 }
 /**
  * This method validates browser/sw context for indexedDB by opening a dummy indexedDB database and reject
@@ -253,25 +195,25 @@ function isIndexedDBAvailable() {
  * private browsing)
  */
 function validateIndexedDBOpenable() {
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         try {
-            var preExist_1 = true;
-            var DB_CHECK_NAME_1 = 'validate-browser-context-for-indexeddb-analytics-module';
-            var request_1 = self.indexedDB.open(DB_CHECK_NAME_1);
-            request_1.onsuccess = function () {
-                request_1.result.close();
+            let preExist = true;
+            const DB_CHECK_NAME = 'validate-browser-context-for-indexeddb-analytics-module';
+            const request = self.indexedDB.open(DB_CHECK_NAME);
+            request.onsuccess = () => {
+                request.result.close();
                 // delete database only when it doesn't pre-exist
-                if (!preExist_1) {
-                    self.indexedDB.deleteDatabase(DB_CHECK_NAME_1);
+                if (!preExist) {
+                    self.indexedDB.deleteDatabase(DB_CHECK_NAME);
                 }
                 resolve(true);
             };
-            request_1.onupgradeneeded = function () {
-                preExist_1 = false;
+            request.onupgradeneeded = () => {
+                preExist = false;
             };
-            request_1.onerror = function () {
+            request.onerror = () => {
                 var _a;
-                reject(((_a = request_1.error) === null || _a === void 0 ? void 0 : _a.message) || '');
+                reject(((_a = request.error) === null || _a === void 0 ? void 0 : _a.message) || '');
             };
         }
         catch (error) {
@@ -285,7 +227,7 @@ function validateIndexedDBOpenable() {
  * @return true if cookie is enabled within current browser
  */
 function areCookiesEnabled() {
-    if (!navigator || !navigator.cookieEnabled) {
+    if (typeof navigator === 'undefined' || !navigator.cookieEnabled) {
         return false;
     }
     return true;
@@ -307,57 +249,89 @@ function areCookiesEnabled() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var ERROR_NAME = 'FirebaseError';
+/**
+ * @fileoverview Standardized Firebase Error.
+ *
+ * Usage:
+ *
+ *   // Typescript string literals for type-safe codes
+ *   type Err =
+ *     'unknown' |
+ *     'object-not-found'
+ *     ;
+ *
+ *   // Closure enum for type-safe error codes
+ *   // at-enum {string}
+ *   var Err = {
+ *     UNKNOWN: 'unknown',
+ *     OBJECT_NOT_FOUND: 'object-not-found',
+ *   }
+ *
+ *   let errors: Map<Err, string> = {
+ *     'generic-error': "Unknown error",
+ *     'file-not-found': "Could not find file: {$file}",
+ *   };
+ *
+ *   // Type-safe function - must pass a valid error code as param.
+ *   let error = new ErrorFactory<Err>('service', 'Service', errors);
+ *
+ *   ...
+ *   throw error.create(Err.GENERIC);
+ *   ...
+ *   throw error.create(Err.FILE_NOT_FOUND, {'file': fileName});
+ *   ...
+ *   // Service: Could not file file: foo.txt (service/file-not-found).
+ *
+ *   catch (e) {
+ *     assert(e.message === "Could not find file: foo.txt.");
+ *     if (e.code === 'service/file-not-found') {
+ *       console.log("Could not read file: " + e['file']);
+ *     }
+ *   }
+ */
+const ERROR_NAME = 'FirebaseError';
 // Based on code from:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-var FirebaseError = /** @class */ (function (_super) {
-    __extends(FirebaseError, _super);
-    function FirebaseError(code, message, customData) {
-        var _this = _super.call(this, message) || this;
-        _this.code = code;
-        _this.customData = customData;
-        _this.name = ERROR_NAME;
+class FirebaseError extends Error {
+    constructor(code, message, customData) {
+        super(message);
+        this.code = code;
+        this.customData = customData;
+        this.name = ERROR_NAME;
         // Fix For ES5
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-        Object.setPrototypeOf(_this, FirebaseError.prototype);
+        Object.setPrototypeOf(this, FirebaseError.prototype);
         // Maintains proper stack trace for where our error was thrown.
         // Only available on V8.
         if (Error.captureStackTrace) {
-            Error.captureStackTrace(_this, ErrorFactory.prototype.create);
+            Error.captureStackTrace(this, ErrorFactory.prototype.create);
         }
-        return _this;
     }
-    return FirebaseError;
-}(Error));
-var ErrorFactory = /** @class */ (function () {
-    function ErrorFactory(service, serviceName, errors) {
+}
+class ErrorFactory {
+    constructor(service, serviceName, errors) {
         this.service = service;
         this.serviceName = serviceName;
         this.errors = errors;
     }
-    ErrorFactory.prototype.create = function (code) {
-        var data = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            data[_i - 1] = arguments[_i];
-        }
-        var customData = data[0] || {};
-        var fullCode = this.service + "/" + code;
-        var template = this.errors[code];
-        var message = template ? replaceTemplate(template, customData) : 'Error';
+    create(code, ...data) {
+        const customData = data[0] || {};
+        const fullCode = `${this.service}/${code}`;
+        const template = this.errors[code];
+        const message = template ? replaceTemplate(template, customData) : 'Error';
         // Service Name: Error message (service/code).
-        var fullMessage = this.serviceName + ": " + message + " (" + fullCode + ").";
-        var error = new FirebaseError(fullCode, fullMessage, customData);
+        const fullMessage = `${this.serviceName}: ${message} (${fullCode}).`;
+        const error = new FirebaseError(fullCode, fullMessage, customData);
         return error;
-    };
-    return ErrorFactory;
-}());
+    }
+}
 function replaceTemplate(template, data) {
-    return template.replace(PATTERN, function (_, key) {
-        var value = data[key];
-        return value != null ? String(value) : "<" + key + "?>";
+    return template.replace(PATTERN, (_, key) => {
+        const value = data[key];
+        return value != null ? String(value) : `<${key}?>`;
     });
 }
-var PATTERN = /\{\$([^}]+)}/g;
+const PATTERN = /\{\$([^}]+)}/g;
 /**
  * Deep equal two objects. Support Arrays and Objects.
  */
@@ -365,15 +339,14 @@ function deepEqual(a, b) {
     if (a === b) {
         return true;
     }
-    var aKeys = Object.keys(a);
-    var bKeys = Object.keys(b);
-    for (var _i = 0, aKeys_1 = aKeys; _i < aKeys_1.length; _i++) {
-        var k = aKeys_1[_i];
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    for (const k of aKeys) {
         if (!bKeys.includes(k)) {
             return false;
         }
-        var aProp = a[k];
-        var bProp = b[k];
+        const aProp = a[k];
+        const bProp = b[k];
         if (isObject(aProp) && isObject(bProp)) {
             if (!deepEqual(aProp, bProp)) {
                 return false;
@@ -383,8 +356,7 @@ function deepEqual(a, b) {
             return false;
         }
     }
-    for (var _a = 0, bKeys_1 = bKeys; _a < bKeys_1.length; _a++) {
-        var k = bKeys_1[_a];
+    for (const k of bKeys) {
         if (!aKeys.includes(k)) {
             return false;
         }
@@ -414,18 +386,18 @@ function isObject(thing) {
 /**
  * The amount of milliseconds to exponentially increase.
  */
-var DEFAULT_INTERVAL_MILLIS = 1000;
+const DEFAULT_INTERVAL_MILLIS = 1000;
 /**
  * The factor to backoff by.
  * Should be a number greater than 1.
  */
-var DEFAULT_BACKOFF_FACTOR = 2;
+const DEFAULT_BACKOFF_FACTOR = 2;
 /**
  * The maximum milliseconds to increase to.
  *
  * <p>Visible for testing
  */
-var MAX_VALUE_MILLIS = 4 * 60 * 60 * 1000; // Four hours, like iOS and Android.
+const MAX_VALUE_MILLIS = 4 * 60 * 60 * 1000; // Four hours, like iOS and Android.
 /**
  * The percentage of backoff time to randomize by.
  * See
@@ -434,22 +406,20 @@ var MAX_VALUE_MILLIS = 4 * 60 * 60 * 1000; // Four hours, like iOS and Android.
  *
  * <p>Visible for testing
  */
-var RANDOM_FACTOR = 0.5;
+const RANDOM_FACTOR = 0.5;
 /**
  * Based on the backoff method from
  * https://github.com/google/closure-library/blob/master/closure/goog/math/exponentialbackoff.js.
  * Extracted here so we don't need to pass metadata and a stateful ExponentialBackoff object around.
  */
-function calculateBackoffMillis(backoffCount, intervalMillis, backoffFactor) {
-    if (intervalMillis === void 0) { intervalMillis = DEFAULT_INTERVAL_MILLIS; }
-    if (backoffFactor === void 0) { backoffFactor = DEFAULT_BACKOFF_FACTOR; }
+function calculateBackoffMillis(backoffCount, intervalMillis = DEFAULT_INTERVAL_MILLIS, backoffFactor = DEFAULT_BACKOFF_FACTOR) {
     // Calculates an exponentially increasing value.
     // Deviation: calculates value from count and a constant interval, so we only need to save value
     // and count to restore state.
-    var currBaseValue = intervalMillis * Math.pow(backoffFactor, backoffCount);
+    const currBaseValue = intervalMillis * Math.pow(backoffFactor, backoffCount);
     // A random "fuzz" to avoid waves of retries.
     // Deviation: randomFactor is required.
-    var randomWait = Math.round(
+    const randomWait = Math.round(
     // A fraction of the backoff value to add/subtract.
     // Deviation: changes multiplication order to improve readability.
     RANDOM_FACTOR *
@@ -829,7 +799,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.0";
+const version$1 = "0.5.1";
 
 /**
  * @license
@@ -2728,7 +2698,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2744,7 +2714,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies
@@ -2853,7 +2823,7 @@ function logEvent(analyticsInstance, eventName, eventParams, options) {
 }
 
 const name = "@firebase/analytics";
-const version = "0.7.0";
+const version = "0.7.1";
 
 /**
  * Firebase Analytics

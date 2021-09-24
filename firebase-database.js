@@ -1,52 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js';
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-    return extendStatics(d, b);
-};
-
-function __extends(d, b) {
-    if (typeof b !== "function" && b !== null)
-        throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-
-function __spreadArray(to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
-}
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
 
 /**
  * @license
@@ -67,7 +19,7 @@ function __spreadArray(to, from) {
 /**
  * @fileoverview Firebase constants.  Some of these (@defines) can be overridden at compile-time.
  */
-var CONSTANTS = {
+const CONSTANTS = {
     /**
      * @define {boolean} Whether this is the client Node.js SDK.
      */
@@ -101,7 +53,7 @@ var CONSTANTS = {
 /**
  * Throws an error if the provided assertion is falsy
  */
-var assert = function (assertion, message) {
+const assert = function (assertion, message) {
     if (!assertion) {
         throw assertionError(message);
     }
@@ -109,7 +61,7 @@ var assert = function (assertion, message) {
 /**
  * Returns an Error object suitable for throwing.
  */
-var assertionError = function (message) {
+const assertionError = function (message) {
     return new Error('Firebase Database (' +
         CONSTANTS.SDK_VERSION +
         ') INTERNAL ASSERT FAILED: ' +
@@ -132,12 +84,12 @@ var assertionError = function (message) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var stringToByteArray$1 = function (str) {
+const stringToByteArray$1 = function (str) {
     // TODO(user): Use native implementations if/when available
-    var out = [];
-    var p = 0;
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
+    const out = [];
+    let p = 0;
+    for (let i = 0; i < str.length; i++) {
+        let c = str.charCodeAt(i);
         if (c < 128) {
             out[p++] = c;
         }
@@ -169,32 +121,32 @@ var stringToByteArray$1 = function (str) {
  * @param bytes Array of numbers representing characters.
  * @return Stringification of the array.
  */
-var byteArrayToString = function (bytes) {
+const byteArrayToString = function (bytes) {
     // TODO(user): Use native implementations if/when available
-    var out = [];
-    var pos = 0, c = 0;
+    const out = [];
+    let pos = 0, c = 0;
     while (pos < bytes.length) {
-        var c1 = bytes[pos++];
+        const c1 = bytes[pos++];
         if (c1 < 128) {
             out[c++] = String.fromCharCode(c1);
         }
         else if (c1 > 191 && c1 < 224) {
-            var c2 = bytes[pos++];
+            const c2 = bytes[pos++];
             out[c++] = String.fromCharCode(((c1 & 31) << 6) | (c2 & 63));
         }
         else if (c1 > 239 && c1 < 365) {
             // Surrogate Pair
-            var c2 = bytes[pos++];
-            var c3 = bytes[pos++];
-            var c4 = bytes[pos++];
-            var u = (((c1 & 7) << 18) | ((c2 & 63) << 12) | ((c3 & 63) << 6) | (c4 & 63)) -
+            const c2 = bytes[pos++];
+            const c3 = bytes[pos++];
+            const c4 = bytes[pos++];
+            const u = (((c1 & 7) << 18) | ((c2 & 63) << 12) | ((c3 & 63) << 6) | (c4 & 63)) -
                 0x10000;
             out[c++] = String.fromCharCode(0xd800 + (u >> 10));
             out[c++] = String.fromCharCode(0xdc00 + (u & 1023));
         }
         else {
-            var c2 = bytes[pos++];
-            var c3 = bytes[pos++];
+            const c2 = bytes[pos++];
+            const c3 = bytes[pos++];
             out[c++] = String.fromCharCode(((c1 & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
         }
     }
@@ -203,7 +155,7 @@ var byteArrayToString = function (bytes) {
 // We define it as an object literal instead of a class because a class compiled down to es5 can't
 // be treeshaked. https://github.com/rollup/rollup/issues/1691
 // Static lookup maps, lazily populated by init_()
-var base64 = {
+const base64 = {
     /**
      * Maps bytes to characters.
      */
@@ -256,25 +208,25 @@ var base64 = {
      *     alternative alphabet.
      * @return The base64 encoded string.
      */
-    encodeByteArray: function (input, webSafe) {
+    encodeByteArray(input, webSafe) {
         if (!Array.isArray(input)) {
             throw Error('encodeByteArray takes an array as a parameter');
         }
         this.init_();
-        var byteToCharMap = webSafe
+        const byteToCharMap = webSafe
             ? this.byteToCharMapWebSafe_
             : this.byteToCharMap_;
-        var output = [];
-        for (var i = 0; i < input.length; i += 3) {
-            var byte1 = input[i];
-            var haveByte2 = i + 1 < input.length;
-            var byte2 = haveByte2 ? input[i + 1] : 0;
-            var haveByte3 = i + 2 < input.length;
-            var byte3 = haveByte3 ? input[i + 2] : 0;
-            var outByte1 = byte1 >> 2;
-            var outByte2 = ((byte1 & 0x03) << 4) | (byte2 >> 4);
-            var outByte3 = ((byte2 & 0x0f) << 2) | (byte3 >> 6);
-            var outByte4 = byte3 & 0x3f;
+        const output = [];
+        for (let i = 0; i < input.length; i += 3) {
+            const byte1 = input[i];
+            const haveByte2 = i + 1 < input.length;
+            const byte2 = haveByte2 ? input[i + 1] : 0;
+            const haveByte3 = i + 2 < input.length;
+            const byte3 = haveByte3 ? input[i + 2] : 0;
+            const outByte1 = byte1 >> 2;
+            const outByte2 = ((byte1 & 0x03) << 4) | (byte2 >> 4);
+            let outByte3 = ((byte2 & 0x0f) << 2) | (byte3 >> 6);
+            let outByte4 = byte3 & 0x3f;
             if (!haveByte3) {
                 outByte4 = 64;
                 if (!haveByte2) {
@@ -293,7 +245,7 @@ var base64 = {
      *     alternative alphabet.
      * @return The base64 encoded string.
      */
-    encodeString: function (input, webSafe) {
+    encodeString(input, webSafe) {
         // Shortcut for Mozilla browsers that implement
         // a native base64 encoder in the form of "btoa/atob"
         if (this.HAS_NATIVE_SUPPORT && !webSafe) {
@@ -309,7 +261,7 @@ var base64 = {
      *     alternative alphabet.
      * @return string representing the decoded value.
      */
-    decodeString: function (input, webSafe) {
+    decodeString(input, webSafe) {
         // Shortcut for Mozilla browsers that implement
         // a native base64 encoder in the form of "btoa/atob"
         if (this.HAS_NATIVE_SUPPORT && !webSafe) {
@@ -332,33 +284,33 @@ var base64 = {
      * @param webSafe True if we should use the web-safe alphabet.
      * @return bytes representing the decoded value.
      */
-    decodeStringToByteArray: function (input, webSafe) {
+    decodeStringToByteArray(input, webSafe) {
         this.init_();
-        var charToByteMap = webSafe
+        const charToByteMap = webSafe
             ? this.charToByteMapWebSafe_
             : this.charToByteMap_;
-        var output = [];
-        for (var i = 0; i < input.length;) {
-            var byte1 = charToByteMap[input.charAt(i++)];
-            var haveByte2 = i < input.length;
-            var byte2 = haveByte2 ? charToByteMap[input.charAt(i)] : 0;
+        const output = [];
+        for (let i = 0; i < input.length;) {
+            const byte1 = charToByteMap[input.charAt(i++)];
+            const haveByte2 = i < input.length;
+            const byte2 = haveByte2 ? charToByteMap[input.charAt(i)] : 0;
             ++i;
-            var haveByte3 = i < input.length;
-            var byte3 = haveByte3 ? charToByteMap[input.charAt(i)] : 64;
+            const haveByte3 = i < input.length;
+            const byte3 = haveByte3 ? charToByteMap[input.charAt(i)] : 64;
             ++i;
-            var haveByte4 = i < input.length;
-            var byte4 = haveByte4 ? charToByteMap[input.charAt(i)] : 64;
+            const haveByte4 = i < input.length;
+            const byte4 = haveByte4 ? charToByteMap[input.charAt(i)] : 64;
             ++i;
             if (byte1 == null || byte2 == null || byte3 == null || byte4 == null) {
                 throw Error();
             }
-            var outByte1 = (byte1 << 2) | (byte2 >> 4);
+            const outByte1 = (byte1 << 2) | (byte2 >> 4);
             output.push(outByte1);
             if (byte3 !== 64) {
-                var outByte2 = ((byte2 << 4) & 0xf0) | (byte3 >> 2);
+                const outByte2 = ((byte2 << 4) & 0xf0) | (byte3 >> 2);
                 output.push(outByte2);
                 if (byte4 !== 64) {
-                    var outByte3 = ((byte3 << 6) & 0xc0) | byte4;
+                    const outByte3 = ((byte3 << 6) & 0xc0) | byte4;
                     output.push(outByte3);
                 }
             }
@@ -370,14 +322,14 @@ var base64 = {
      * accessing any of the static map variables.
      * @private
      */
-    init_: function () {
+    init_() {
         if (!this.byteToCharMap_) {
             this.byteToCharMap_ = {};
             this.charToByteMap_ = {};
             this.byteToCharMapWebSafe_ = {};
             this.charToByteMapWebSafe_ = {};
             // We want quick mappings back and forth, so we precompute two maps.
-            for (var i = 0; i < this.ENCODED_VALS.length; i++) {
+            for (let i = 0; i < this.ENCODED_VALS.length; i++) {
                 this.byteToCharMap_[i] = this.ENCODED_VALS.charAt(i);
                 this.charToByteMap_[this.byteToCharMap_[i]] = i;
                 this.byteToCharMapWebSafe_[i] = this.ENCODED_VALS_WEBSAFE.charAt(i);
@@ -394,15 +346,15 @@ var base64 = {
 /**
  * URL-safe base64 encoding
  */
-var base64Encode = function (str) {
-    var utf8Bytes = stringToByteArray$1(str);
+const base64Encode = function (str) {
+    const utf8Bytes = stringToByteArray$1(str);
     return base64.encodeByteArray(utf8Bytes, true);
 };
 /**
  * URL-safe base64 encoding (without "." padding in the end).
  * e.g. Used in JSON Web Token (JWT) parts.
  */
-var base64urlEncodeWithoutPadding = function (str) {
+const base64urlEncodeWithoutPadding = function (str) {
     // Use base64url encoding and remove padding in the end (dot characters).
     return base64Encode(str).replace(/\./g, '');
 };
@@ -415,7 +367,7 @@ var base64urlEncodeWithoutPadding = function (str) {
  * @param str To be decoded
  * @return Decoded result, if possible
  */
-var base64Decode = function (str) {
+const base64Decode = function (str) {
     try {
         return base64.decodeString(str, true);
     }
@@ -469,7 +421,7 @@ function deepExtend(target, source) {
         case Date:
             // Treat Dates like scalars; if the target date object had any child
             // properties - they will be lost!
-            var dateValue = source;
+            const dateValue = source;
             return new Date(dateValue.getTime());
         case Object:
             if (target === undefined) {
@@ -484,7 +436,7 @@ function deepExtend(target, source) {
             // Not a plain Object - treat it as a scalar.
             return source;
     }
-    for (var prop in source) {
+    for (const prop in source) {
         // use isValidKey to guard against prototype pollution. See https://snyk.io/vuln/SNYK-JS-LODASH-450202
         if (!source.hasOwnProperty(prop) || !isValidKey$1(prop)) {
             continue;
@@ -513,14 +465,13 @@ function isValidKey$1(key) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var Deferred = /** @class */ (function () {
-    function Deferred() {
-        var _this = this;
-        this.reject = function () { };
-        this.resolve = function () { };
-        this.promise = new Promise(function (resolve, reject) {
-            _this.resolve = resolve;
-            _this.reject = reject;
+class Deferred {
+    constructor() {
+        this.reject = () => { };
+        this.resolve = () => { };
+        this.promise = new Promise((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
         });
     }
     /**
@@ -528,19 +479,18 @@ var Deferred = /** @class */ (function () {
      * invoking promises inline, which Promises are forbidden to do. This method accepts an optional node-style callback
      * and returns a node-style callback which will resolve or reject the Deferred's promise.
      */
-    Deferred.prototype.wrapCallback = function (callback) {
-        var _this = this;
-        return function (error, value) {
+    wrapCallback(callback) {
+        return (error, value) => {
             if (error) {
-                _this.reject(error);
+                this.reject(error);
             }
             else {
-                _this.resolve(value);
+                this.resolve(value);
             }
             if (typeof callback === 'function') {
                 // Attaching noop handler just in case developer wasn't expecting
                 // promises
-                _this.promise.catch(function () { });
+                this.promise.catch(() => { });
                 // Some of our callbacks don't expect a value and our own tests
                 // assert that the parameter length is 1
                 if (callback.length === 1) {
@@ -551,9 +501,8 @@ var Deferred = /** @class */ (function () {
                 }
             }
         };
-    };
-    return Deferred;
-}());
+    }
+}
 
 /**
  * @license
@@ -576,24 +525,24 @@ function createMockUserToken(token, projectId) {
         throw new Error('The "uid" field is no longer supported by mockUserToken. Please use "sub" instead for Firebase Auth User ID.');
     }
     // Unsecured JWTs use "none" as the algorithm.
-    var header = {
+    const header = {
         alg: 'none',
         type: 'JWT'
     };
-    var project = projectId || 'demo-project';
-    var iat = token.iat || 0;
-    var sub = token.sub || token.user_id;
+    const project = projectId || 'demo-project';
+    const iat = token.iat || 0;
+    const sub = token.sub || token.user_id;
     if (!sub) {
         throw new Error("mockUserToken must contain 'sub' or 'user_id' field!");
     }
-    var payload = __assign({ 
+    const payload = Object.assign({ 
         // Set all required fields to decent defaults
-        iss: "https://securetoken.google.com/" + project, aud: project, iat: iat, exp: iat + 3600, auth_time: iat, sub: sub, user_id: sub, firebase: {
+        iss: `https://securetoken.google.com/${project}`, aud: project, iat, exp: iat + 3600, auth_time: iat, sub, user_id: sub, firebase: {
             sign_in_provider: 'custom',
             identities: {}
         } }, token);
     // Unsecured JWTs use the empty string as a signature.
-    var signature = '';
+    const signature = '';
     return [
         base64urlEncodeWithoutPadding(JSON.stringify(header)),
         base64urlEncodeWithoutPadding(JSON.stringify(payload)),
@@ -677,74 +626,6 @@ function isNodeSdk() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var ERROR_NAME = 'FirebaseError';
-// Based on code from:
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-var FirebaseError = /** @class */ (function (_super) {
-    __extends(FirebaseError, _super);
-    function FirebaseError(code, message, customData) {
-        var _this = _super.call(this, message) || this;
-        _this.code = code;
-        _this.customData = customData;
-        _this.name = ERROR_NAME;
-        // Fix For ES5
-        // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-        Object.setPrototypeOf(_this, FirebaseError.prototype);
-        // Maintains proper stack trace for where our error was thrown.
-        // Only available on V8.
-        if (Error.captureStackTrace) {
-            Error.captureStackTrace(_this, ErrorFactory.prototype.create);
-        }
-        return _this;
-    }
-    return FirebaseError;
-}(Error));
-var ErrorFactory = /** @class */ (function () {
-    function ErrorFactory(service, serviceName, errors) {
-        this.service = service;
-        this.serviceName = serviceName;
-        this.errors = errors;
-    }
-    ErrorFactory.prototype.create = function (code) {
-        var data = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            data[_i - 1] = arguments[_i];
-        }
-        var customData = data[0] || {};
-        var fullCode = this.service + "/" + code;
-        var template = this.errors[code];
-        var message = template ? replaceTemplate(template, customData) : 'Error';
-        // Service Name: Error message (service/code).
-        var fullMessage = this.serviceName + ": " + message + " (" + fullCode + ").";
-        var error = new FirebaseError(fullCode, fullMessage, customData);
-        return error;
-    };
-    return ErrorFactory;
-}());
-function replaceTemplate(template, data) {
-    return template.replace(PATTERN, function (_, key) {
-        var value = data[key];
-        return value != null ? String(value) : "<" + key + "?>";
-    });
-}
-var PATTERN = /\{\$([^}]+)}/g;
-
-/**
- * @license
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 /**
  * Evaluates a JSON string into a javascript object.
  *
@@ -786,10 +667,10 @@ function stringify(data) {
  * - May return with invalid / incomplete claims if there's no native base64 decoding support.
  * - Doesn't check if the token is actually valid.
  */
-var decode = function (token) {
-    var header = {}, claims = {}, data = {}, signature = '';
+const decode = function (token) {
+    let header = {}, claims = {}, data = {}, signature = '';
     try {
-        var parts = token.split('.');
+        const parts = token.split('.');
         header = jsonEval(base64Decode(parts[0]) || '');
         claims = jsonEval(base64Decode(parts[1]) || '');
         signature = parts[2];
@@ -798,10 +679,10 @@ var decode = function (token) {
     }
     catch (e) { }
     return {
-        header: header,
-        claims: claims,
-        data: data,
-        signature: signature
+        header,
+        claims,
+        data,
+        signature
     };
 };
 /**
@@ -811,8 +692,8 @@ var decode = function (token) {
  * - May return a false negative if there's no native base64 decoding support.
  * - Doesn't check if the token is actually valid.
  */
-var isValidFormat = function (token) {
-    var decoded = decode(token), claims = decoded.claims;
+const isValidFormat = function (token) {
+    const decoded = decode(token), claims = decoded.claims;
     return !!claims && typeof claims === 'object' && claims.hasOwnProperty('iat');
 };
 /**
@@ -822,8 +703,8 @@ var isValidFormat = function (token) {
  * - May return a false negative if there's no native base64 decoding support.
  * - Doesn't check if the token is actually valid.
  */
-var isAdmin = function (token) {
-    var claims = decode(token).claims;
+const isAdmin = function (token) {
+    const claims = decode(token).claims;
     return typeof claims === 'object' && claims['admin'] === true;
 };
 
@@ -855,7 +736,7 @@ function safeGet(obj, key) {
     }
 }
 function isEmpty(obj) {
-    for (var key in obj) {
+    for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
             return false;
         }
@@ -863,8 +744,8 @@ function isEmpty(obj) {
     return true;
 }
 function map(obj, fn, contextObj) {
-    var res = {};
-    for (var key in obj) {
+    const res = {};
+    for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
             res[key] = fn.call(contextObj, obj[key], key, obj);
         }
@@ -894,20 +775,16 @@ function map(obj, fn, contextObj) {
  * Note: You must prepend it with ? when adding it to a URL.
  */
 function querystring(querystringParams) {
-    var params = [];
-    var _loop_1 = function (key, value) {
+    const params = [];
+    for (const [key, value] of Object.entries(querystringParams)) {
         if (Array.isArray(value)) {
-            value.forEach(function (arrayVal) {
+            value.forEach(arrayVal => {
                 params.push(encodeURIComponent(key) + '=' + encodeURIComponent(arrayVal));
             });
         }
         else {
             params.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
         }
-    };
-    for (var _i = 0, _a = Object.entries(querystringParams); _i < _a.length; _i++) {
-        var _b = _a[_i], key = _b[0], value = _b[1];
-        _loop_1(key, value);
     }
     return params.length ? '&' + params.join('&') : '';
 }
@@ -951,8 +828,8 @@ function querystring(querystringParams) {
  * @final
  * @struct
  */
-var Sha1 = /** @class */ (function () {
-    function Sha1() {
+class Sha1 {
+    constructor() {
         /**
          * Holds the previous values of accumulated variables a-e in the compress_
          * function.
@@ -985,12 +862,12 @@ var Sha1 = /** @class */ (function () {
         this.total_ = 0;
         this.blockSize = 512 / 8;
         this.pad_[0] = 128;
-        for (var i = 1; i < this.blockSize; ++i) {
+        for (let i = 1; i < this.blockSize; ++i) {
             this.pad_[i] = 0;
         }
         this.reset();
     }
-    Sha1.prototype.reset = function () {
+    reset() {
         this.chain_[0] = 0x67452301;
         this.chain_[1] = 0xefcdab89;
         this.chain_[2] = 0x98badcfe;
@@ -998,21 +875,21 @@ var Sha1 = /** @class */ (function () {
         this.chain_[4] = 0xc3d2e1f0;
         this.inbuf_ = 0;
         this.total_ = 0;
-    };
+    }
     /**
      * Internal compress helper function.
      * @param buf Block to compress.
      * @param offset Offset of the block in the buffer.
      * @private
      */
-    Sha1.prototype.compress_ = function (buf, offset) {
+    compress_(buf, offset) {
         if (!offset) {
             offset = 0;
         }
-        var W = this.W_;
+        const W = this.W_;
         // get 16 big endian words
         if (typeof buf === 'string') {
-            for (var i = 0; i < 16; i++) {
+            for (let i = 0; i < 16; i++) {
                 // TODO(user): [bug 8140122] Recent versions of Safari for Mac OS and iOS
                 // have a bug that turns the post-increment ++ operator into pre-increment
                 // during JIT compilation.  We have code that depends heavily on SHA-1 for
@@ -1030,7 +907,7 @@ var Sha1 = /** @class */ (function () {
             }
         }
         else {
-            for (var i = 0; i < 16; i++) {
+            for (let i = 0; i < 16; i++) {
                 W[i] =
                     (buf[offset] << 24) |
                         (buf[offset + 1] << 16) |
@@ -1040,18 +917,18 @@ var Sha1 = /** @class */ (function () {
             }
         }
         // expand to 80 words
-        for (var i = 16; i < 80; i++) {
-            var t = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
+        for (let i = 16; i < 80; i++) {
+            const t = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
             W[i] = ((t << 1) | (t >>> 31)) & 0xffffffff;
         }
-        var a = this.chain_[0];
-        var b = this.chain_[1];
-        var c = this.chain_[2];
-        var d = this.chain_[3];
-        var e = this.chain_[4];
-        var f, k;
+        let a = this.chain_[0];
+        let b = this.chain_[1];
+        let c = this.chain_[2];
+        let d = this.chain_[3];
+        let e = this.chain_[4];
+        let f, k;
         // TODO(user): Try to unroll this loop to speed up the computation.
-        for (var i = 0; i < 80; i++) {
+        for (let i = 0; i < 80; i++) {
             if (i < 40) {
                 if (i < 20) {
                     f = d ^ (b & (c ^ d));
@@ -1072,7 +949,7 @@ var Sha1 = /** @class */ (function () {
                     k = 0xca62c1d6;
                 }
             }
-            var t = (((a << 5) | (a >>> 27)) + f + e + k + W[i]) & 0xffffffff;
+            const t = (((a << 5) | (a >>> 27)) + f + e + k + W[i]) & 0xffffffff;
             e = d;
             d = c;
             c = ((b << 30) | (b >>> 2)) & 0xffffffff;
@@ -1084,8 +961,8 @@ var Sha1 = /** @class */ (function () {
         this.chain_[2] = (this.chain_[2] + c) & 0xffffffff;
         this.chain_[3] = (this.chain_[3] + d) & 0xffffffff;
         this.chain_[4] = (this.chain_[4] + e) & 0xffffffff;
-    };
-    Sha1.prototype.update = function (bytes, length) {
+    }
+    update(bytes, length) {
         // TODO(johnlenz): tighten the function signature and remove this check
         if (bytes == null) {
             return;
@@ -1093,11 +970,11 @@ var Sha1 = /** @class */ (function () {
         if (length === undefined) {
             length = bytes.length;
         }
-        var lengthMinusBlock = length - this.blockSize;
-        var n = 0;
+        const lengthMinusBlock = length - this.blockSize;
+        let n = 0;
         // Using local instead of member variables gives ~5% speedup on Firefox 16.
-        var buf = this.buf_;
-        var inbuf = this.inbuf_;
+        const buf = this.buf_;
+        let inbuf = this.inbuf_;
         // The outer while loop should execute at most twice.
         while (n < length) {
             // When we have no data in the block to top up, we can directly process the
@@ -1139,11 +1016,11 @@ var Sha1 = /** @class */ (function () {
         }
         this.inbuf_ = inbuf;
         this.total_ += length;
-    };
+    }
     /** @override */
-    Sha1.prototype.digest = function () {
-        var digest = [];
-        var totalBits = this.total_ * 8;
+    digest() {
+        const digest = [];
+        let totalBits = this.total_ * 8;
         // Add pad 0x80 0x00*.
         if (this.inbuf_ < 56) {
             this.update(this.pad_, 56 - this.inbuf_);
@@ -1152,22 +1029,21 @@ var Sha1 = /** @class */ (function () {
             this.update(this.pad_, this.blockSize - (this.inbuf_ - 56));
         }
         // Add # bits.
-        for (var i = this.blockSize - 1; i >= 56; i--) {
+        for (let i = this.blockSize - 1; i >= 56; i--) {
             this.buf_[i] = totalBits & 255;
             totalBits /= 256; // Don't use bit-shifting here!
         }
         this.compress_(this.buf_);
-        var n = 0;
-        for (var i = 0; i < 5; i++) {
-            for (var j = 24; j >= 0; j -= 8) {
+        let n = 0;
+        for (let i = 0; i < 5; i++) {
+            for (let j = 24; j >= 0; j -= 8) {
                 digest[n] = (this.chain_[i] >> j) & 255;
                 ++n;
             }
         }
         return digest;
-    };
-    return Sha1;
-}());
+    }
+}
 /**
  * Generates a string to prefix an error message about failed argument validation
  *
@@ -1176,7 +1052,7 @@ var Sha1 = /** @class */ (function () {
  * @return The prefix to add to the error thrown for validation.
  */
 function errorPrefix(fnName, argName) {
-    return fnName + " failed: " + argName + " argument ";
+    return `${fnName} failed: ${argName} argument `;
 }
 
 /**
@@ -1208,17 +1084,17 @@ function errorPrefix(fnName, argName) {
  * @param {string} str
  * @return {Array}
  */
-var stringToByteArray = function (str) {
-    var out = [];
-    var p = 0;
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
+const stringToByteArray = function (str) {
+    const out = [];
+    let p = 0;
+    for (let i = 0; i < str.length; i++) {
+        let c = str.charCodeAt(i);
         // Is this the lead surrogate in a surrogate pair?
         if (c >= 0xd800 && c <= 0xdbff) {
-            var high = c - 0xd800; // the high 10 bits.
+            const high = c - 0xd800; // the high 10 bits.
             i++;
             assert(i < str.length, 'Surrogate pair missing trail surrogate.');
-            var low = str.charCodeAt(i) - 0xdc00; // the low 10 bits.
+            const low = str.charCodeAt(i) - 0xdc00; // the low 10 bits.
             c = 0x10000 + (high << 10) + low;
         }
         if (c < 128) {
@@ -1247,10 +1123,10 @@ var stringToByteArray = function (str) {
  * @param {string} str
  * @return {number}
  */
-var stringLength = function (str) {
-    var p = 0;
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
+const stringLength = function (str) {
+    let p = 0;
+    for (let i = 0; i < str.length; i++) {
+        const c = str.charCodeAt(i);
         if (c < 128) {
             p++;
         }
@@ -1351,7 +1227,6 @@ var Component = /** @class */ (function () {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var _a;
 /**
  * The JS SDK supports 5 log levels and also allows a user the ability to
  * silence the logs altogether.
@@ -1372,7 +1247,7 @@ var LogLevel;
     LogLevel[LogLevel["ERROR"] = 4] = "ERROR";
     LogLevel[LogLevel["SILENT"] = 5] = "SILENT";
 })(LogLevel || (LogLevel = {}));
-var levelStringToEnum = {
+const levelStringToEnum = {
     'debug': LogLevel.DEBUG,
     'verbose': LogLevel.VERBOSE,
     'info': LogLevel.INFO,
@@ -1383,50 +1258,46 @@ var levelStringToEnum = {
 /**
  * The default log level
  */
-var defaultLogLevel = LogLevel.INFO;
+const defaultLogLevel = LogLevel.INFO;
 /**
  * By default, `console.debug` is not displayed in the developer console (in
  * chrome). To avoid forcing users to have to opt-in to these logs twice
  * (i.e. once for firebase, and once in the console), we are sending `DEBUG`
  * logs to the `console.log` function.
  */
-var ConsoleMethod = (_a = {},
-    _a[LogLevel.DEBUG] = 'log',
-    _a[LogLevel.VERBOSE] = 'log',
-    _a[LogLevel.INFO] = 'info',
-    _a[LogLevel.WARN] = 'warn',
-    _a[LogLevel.ERROR] = 'error',
-    _a);
+const ConsoleMethod = {
+    [LogLevel.DEBUG]: 'log',
+    [LogLevel.VERBOSE]: 'log',
+    [LogLevel.INFO]: 'info',
+    [LogLevel.WARN]: 'warn',
+    [LogLevel.ERROR]: 'error'
+};
 /**
  * The default log handler will forward DEBUG, VERBOSE, INFO, WARN, and ERROR
  * messages on to their corresponding console counterparts (if the log method
  * is supported by the current log level)
  */
-var defaultLogHandler = function (instance, logType) {
-    var args = [];
-    for (var _i = 2; _i < arguments.length; _i++) {
-        args[_i - 2] = arguments[_i];
-    }
+const defaultLogHandler = (instance, logType, ...args) => {
     if (logType < instance.logLevel) {
         return;
     }
-    var now = new Date().toISOString();
-    var method = ConsoleMethod[logType];
+    const now = new Date().toISOString();
+    const method = ConsoleMethod[logType];
     if (method) {
-        console[method].apply(console, __spreadArray(["[" + now + "]  " + instance.name + ":"], args));
+        console[method](`[${now}]  ${instance.name}:`, ...args);
     }
     else {
-        throw new Error("Attempted to log a message with an invalid logType (value: " + logType + ")");
+        throw new Error(`Attempted to log a message with an invalid logType (value: ${logType})`);
     }
 };
-var Logger = /** @class */ (function () {
+class Logger {
     /**
      * Gives you an instance of a Logger to capture messages according to
      * Firebase's logging scheme.
      *
      * @param name The name that the logs will be associated with
      */
-    function Logger(name) {
+    constructor(name) {
         this.name = name;
         /**
          * The log level of the given Logger instance.
@@ -1442,94 +1313,62 @@ var Logger = /** @class */ (function () {
          */
         this._userLogHandler = null;
     }
-    Object.defineProperty(Logger.prototype, "logLevel", {
-        get: function () {
-            return this._logLevel;
-        },
-        set: function (val) {
-            if (!(val in LogLevel)) {
-                throw new TypeError("Invalid value \"" + val + "\" assigned to `logLevel`");
-            }
-            this._logLevel = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    get logLevel() {
+        return this._logLevel;
+    }
+    set logLevel(val) {
+        if (!(val in LogLevel)) {
+            throw new TypeError(`Invalid value "${val}" assigned to \`logLevel\``);
+        }
+        this._logLevel = val;
+    }
     // Workaround for setter/getter having to be the same type.
-    Logger.prototype.setLogLevel = function (val) {
+    setLogLevel(val) {
         this._logLevel = typeof val === 'string' ? levelStringToEnum[val] : val;
-    };
-    Object.defineProperty(Logger.prototype, "logHandler", {
-        get: function () {
-            return this._logHandler;
-        },
-        set: function (val) {
-            if (typeof val !== 'function') {
-                throw new TypeError('Value assigned to `logHandler` must be a function');
-            }
-            this._logHandler = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Logger.prototype, "userLogHandler", {
-        get: function () {
-            return this._userLogHandler;
-        },
-        set: function (val) {
-            this._userLogHandler = val;
-        },
-        enumerable: false,
-        configurable: true
-    });
+    }
+    get logHandler() {
+        return this._logHandler;
+    }
+    set logHandler(val) {
+        if (typeof val !== 'function') {
+            throw new TypeError('Value assigned to `logHandler` must be a function');
+        }
+        this._logHandler = val;
+    }
+    get userLogHandler() {
+        return this._userLogHandler;
+    }
+    set userLogHandler(val) {
+        this._userLogHandler = val;
+    }
     /**
      * The functions below are all based on the `console` interface
      */
-    Logger.prototype.debug = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.DEBUG], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.DEBUG], args));
-    };
-    Logger.prototype.log = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.VERBOSE], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.VERBOSE], args));
-    };
-    Logger.prototype.info = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.INFO], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.INFO], args));
-    };
-    Logger.prototype.warn = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.WARN], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.WARN], args));
-    };
-    Logger.prototype.error = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        this._userLogHandler && this._userLogHandler.apply(this, __spreadArray([this, LogLevel.ERROR], args));
-        this._logHandler.apply(this, __spreadArray([this, LogLevel.ERROR], args));
-    };
-    return Logger;
-}());
+    debug(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.DEBUG, ...args);
+        this._logHandler(this, LogLevel.DEBUG, ...args);
+    }
+    log(...args) {
+        this._userLogHandler &&
+            this._userLogHandler(this, LogLevel.VERBOSE, ...args);
+        this._logHandler(this, LogLevel.VERBOSE, ...args);
+    }
+    info(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.INFO, ...args);
+        this._logHandler(this, LogLevel.INFO, ...args);
+    }
+    warn(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.WARN, ...args);
+        this._logHandler(this, LogLevel.WARN, ...args);
+    }
+    error(...args) {
+        this._userLogHandler && this._userLogHandler(this, LogLevel.ERROR, ...args);
+        this._logHandler(this, LogLevel.ERROR, ...args);
+    }
+}
 
 const name = "@firebase/database";
-const version = "0.12.0";
+const version = "0.12.1";
 
 /**
  * @license
@@ -15077,7 +14916,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -15115,11 +14954,11 @@ class Database {
 }
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.
@@ -15376,23 +15215,6 @@ transactionUpdate, options) {
     repoStartTransaction(ref._repo, ref._path, transactionUpdate, promiseComplete, unwatcher, applyLocally);
     return deferred.promise;
 }
-
-/**
- * @license
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 PersistentConnection.prototype.simpleListen = function (pathString, onComplete) {
     this.sendRequest('q', { p: pathString }, onComplete);
