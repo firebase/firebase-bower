@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
 
 /**
  * @license
@@ -757,9 +757,6 @@ class XhrConnection {
             });
         });
     }
-    /**
-     * @override
-     */
     send(url, method, body, headers) {
         if (this.sent_) {
             throw internalError('cannot .send() more than once');
@@ -781,18 +778,12 @@ class XhrConnection {
         }
         return this.sendPromise_;
     }
-    /**
-     * @override
-     */
     getErrorCode() {
         if (!this.sent_) {
             throw internalError('cannot .getErrorCode() before sending');
         }
         return this.errorCode_;
     }
-    /**
-     * @override
-     */
     getStatus() {
         if (!this.sent_) {
             throw internalError('cannot .getStatus() before sending');
@@ -804,39 +795,24 @@ class XhrConnection {
             return -1;
         }
     }
-    /**
-     * @override
-     */
     getResponseText() {
         if (!this.sent_) {
             throw internalError('cannot .getResponseText() before sending');
         }
         return this.xhr_.responseText;
     }
-    /**
-     * Aborts the request.
-     * @override
-     */
+    /** Aborts the request. */
     abort() {
         this.xhr_.abort();
     }
-    /**
-     * @override
-     */
     getResponseHeader(header) {
         return this.xhr_.getResponseHeader(header);
     }
-    /**
-     * @override
-     */
     addUploadProgressListener(listener) {
         if (this.xhr_.upload != null) {
             this.xhr_.upload.addEventListener('progress', listener);
         }
     }
-    /**
-     * @override
-     */
     removeUploadProgressListener(listener) {
         if (this.xhr_.upload != null) {
             this.xhr_.upload.removeEventListener('progress', listener);
@@ -1218,22 +1194,22 @@ function makeQueryString(params) {
  * limitations under the License.
  */
 class NetworkRequest {
-    constructor(url, method, headers, body, successCodes, additionalRetryCodes, callback, errorCallback, timeout, progressCallback, pool) {
+    constructor(url_, method_, headers_, body_, successCodes_, additionalRetryCodes_, callback_, errorCallback_, timeout_, progressCallback_, pool_) {
+        this.url_ = url_;
+        this.method_ = method_;
+        this.headers_ = headers_;
+        this.body_ = body_;
+        this.successCodes_ = successCodes_;
+        this.additionalRetryCodes_ = additionalRetryCodes_;
+        this.callback_ = callback_;
+        this.errorCallback_ = errorCallback_;
+        this.timeout_ = timeout_;
+        this.progressCallback_ = progressCallback_;
+        this.pool_ = pool_;
         this.pendingConnection_ = null;
         this.backoffId_ = null;
         this.canceled_ = false;
         this.appDelete_ = false;
-        this.url_ = url;
-        this.method_ = method;
-        this.headers_ = headers;
-        this.body_ = body;
-        this.successCodes_ = successCodes.slice();
-        this.additionalRetryCodes_ = additionalRetryCodes.slice();
-        this.callback_ = callback;
-        this.errorCallback_ = errorCallback;
-        this.progressCallback_ = progressCallback;
-        this.timeout_ = timeout;
-        this.pool_ = pool;
         this.promise_ = new Promise((resolve, reject) => {
             this.resolve_ = resolve;
             this.reject_ = reject;
@@ -1244,54 +1220,55 @@ class NetworkRequest {
      * Actually starts the retry loop.
      */
     start_() {
-        const self = this;
-        function doTheRequest(backoffCallback, canceled) {
+        const doTheRequest = (backoffCallback, canceled) => {
             if (canceled) {
                 backoffCallback(false, new RequestEndStatus(false, null, true));
                 return;
             }
-            const connection = self.pool_.createConnection();
-            self.pendingConnection_ = connection;
-            function progressListener(progressEvent) {
+            const connection = this.pool_.createConnection();
+            this.pendingConnection_ = connection;
+            const progressListener = progressEvent => {
                 const loaded = progressEvent.loaded;
-                const total = progressEvent.lengthComputable ? progressEvent.total : -1;
-                if (self.progressCallback_ !== null) {
-                    self.progressCallback_(loaded, total);
+                const total = progressEvent.lengthComputable
+                    ? progressEvent.total
+                    : -1;
+                if (this.progressCallback_ !== null) {
+                    this.progressCallback_(loaded, total);
                 }
-            }
-            if (self.progressCallback_ !== null) {
+            };
+            if (this.progressCallback_ !== null) {
                 connection.addUploadProgressListener(progressListener);
             }
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             connection
-                .send(self.url_, self.method_, self.body_, self.headers_)
+                .send(this.url_, this.method_, this.body_, this.headers_)
                 .then(() => {
-                if (self.progressCallback_ !== null) {
+                if (this.progressCallback_ !== null) {
                     connection.removeUploadProgressListener(progressListener);
                 }
-                self.pendingConnection_ = null;
+                this.pendingConnection_ = null;
                 const hitServer = connection.getErrorCode() === ErrorCode.NO_ERROR;
                 const status = connection.getStatus();
-                if (!hitServer || self.isRetryStatusCode_(status)) {
+                if (!hitServer || this.isRetryStatusCode_(status)) {
                     const wasCanceled = connection.getErrorCode() === ErrorCode.ABORT;
                     backoffCallback(false, new RequestEndStatus(false, null, wasCanceled));
                     return;
                 }
-                const successCode = self.successCodes_.indexOf(status) !== -1;
+                const successCode = this.successCodes_.indexOf(status) !== -1;
                 backoffCallback(true, new RequestEndStatus(successCode, connection));
             });
-        }
+        };
         /**
          * @param requestWentThrough - True if the request eventually went
          *     through, false if it hit the retry limit or was canceled.
          */
-        function backoffDone(requestWentThrough, status) {
-            const resolve = self.resolve_;
-            const reject = self.reject_;
+        const backoffDone = (requestWentThrough, status) => {
+            const resolve = this.resolve_;
+            const reject = this.reject_;
             const connection = status.connection;
             if (status.wasSuccessCode) {
                 try {
-                    const result = self.callback_(connection, connection.getResponseText());
+                    const result = this.callback_(connection, connection.getResponseText());
                     if (isJustDef(result)) {
                         resolve(result);
                     }
@@ -1307,8 +1284,8 @@ class NetworkRequest {
                 if (connection !== null) {
                     const err = unknown();
                     err.serverResponse = connection.getResponseText();
-                    if (self.errorCallback_) {
-                        reject(self.errorCallback_(connection, err));
+                    if (this.errorCallback_) {
+                        reject(this.errorCallback_(connection, err));
                     }
                     else {
                         reject(err);
@@ -1316,7 +1293,7 @@ class NetworkRequest {
                 }
                 else {
                     if (status.canceled) {
-                        const err = self.appDelete_ ? appDeleted() : canceled();
+                        const err = this.appDelete_ ? appDeleted() : canceled();
                         reject(err);
                     }
                     else {
@@ -1325,7 +1302,7 @@ class NetworkRequest {
                     }
                 }
             }
-        }
+        };
         if (this.canceled_) {
             backoffDone(false, new RequestEndStatus(false, null, true));
         }

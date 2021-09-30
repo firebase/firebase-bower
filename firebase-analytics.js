@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
 
 /**
  * @license
@@ -2698,7 +2698,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2714,7 +2714,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies

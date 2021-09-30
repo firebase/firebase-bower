@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
 
 /**
  * @license
@@ -5772,7 +5772,7 @@ function _setActionCodeSettingsOnRequest(auth, request, actionCodeSettings) {
     request.canHandleCodeInApp = actionCodeSettings.handleCodeInApp;
     if (actionCodeSettings.iOS) {
         _assert(actionCodeSettings.iOS.bundleId.length > 0, auth, "missing-ios-bundle-id" /* MISSING_IOS_BUNDLE_ID */);
-        request.iosBundleId = actionCodeSettings.iOS.bundleId;
+        request.iOSBundleId = actionCodeSettings.iOS.bundleId;
     }
     if (actionCodeSettings.android) {
         _assert(actionCodeSettings.android.packageName.length > 0, auth, "missing-android-pkg-name" /* MISSING_ANDROID_PACKAGE_NAME */);
@@ -10113,7 +10113,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.18.0";
+var version = "0.18.1";
 
 /**
  * @license
@@ -10277,7 +10277,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js';
+import { registerVersion, _registerComponent, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
 
 /**
  * @license
@@ -803,7 +803,7 @@ const version = "0.7.2";
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)
