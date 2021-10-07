@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
 
 /**
  * @license
@@ -2641,6 +2641,7 @@ class UserImpl {
         this.phoneNumber = opt.phoneNumber || null;
         this.photoURL = opt.photoURL || null;
         this.isAnonymous = opt.isAnonymous || false;
+        this.tenantId = opt.tenantId || null;
         this.metadata = new UserMetadata(opt.createdAt || undefined, opt.lastLoginAt || undefined);
     }
     async getIdToken(forceRefresh) {
@@ -3583,7 +3584,9 @@ function connectAuthEmulator(auth, url, options) {
         protocol: protocol.replace(':', ''),
         options: Object.freeze({ disableWarnings })
     });
-    emitEmulatorWarning(disableWarnings);
+    if (!disableWarnings) {
+        emitEmulatorWarning();
+    }
 }
 function extractProtocol(url) {
     const protocolEnd = url.indexOf(':');
@@ -3616,7 +3619,7 @@ function parsePort(portStr) {
     }
     return port;
 }
-function emitEmulatorWarning(disableBanner) {
+function emitEmulatorWarning() {
     function attachBanner() {
         const el = document.createElement('p');
         const sty = el.style;
@@ -3641,8 +3644,7 @@ function emitEmulatorWarning(disableBanner) {
             ' production credentials.');
     }
     if (typeof window !== 'undefined' &&
-        typeof document !== 'undefined' &&
-        !disableBanner) {
+        typeof document !== 'undefined') {
         if (document.readyState === 'loading') {
             window.addEventListener('DOMContentLoaded', attachBanner);
         }
@@ -4032,7 +4034,11 @@ class OAuthCredential extends AuthCredential {
             return null;
         }
         const cred = new OAuthCredential(providerId, signInMethod);
-        Object.assign(cred, rest);
+        cred.idToken = rest.idToken || undefined;
+        cred.accessToken = rest.accessToken || undefined;
+        cred.secret = rest.secret;
+        cred.nonce = rest.nonce;
+        cred.pendingToken = rest.pendingToken || null;
         return cred;
     }
     /** @internal */
@@ -4604,7 +4610,7 @@ class OAuthProvider extends BaseOAuthProvider {
      * or the ID token string.
      */
     credential(params) {
-        return this._credential(params);
+        return this._credential(Object.assign(Object.assign({}, params), { nonce: params.rawNonce }));
     }
     /** An internal credential method that accepts more permissive options */
     _credential(params) {
@@ -4647,7 +4653,7 @@ class OAuthProvider extends BaseOAuthProvider {
             return new OAuthProvider(providerId)._credential({
                 idToken: oauthIdToken,
                 accessToken: oauthAccessToken,
-                rawNonce: nonce,
+                nonce,
                 pendingToken
             });
         }
@@ -10113,7 +10119,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.18.1";
+var version = "0.18.2";
 
 /**
  * @license
@@ -10277,7 +10283,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

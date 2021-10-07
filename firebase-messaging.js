@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.1/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
 
 /**
  * @license
