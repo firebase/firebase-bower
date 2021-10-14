@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -1368,7 +1368,7 @@ class Logger {
 }
 
 const name = "@firebase/database";
-const version = "0.12.1";
+const version = "0.12.2";
 
 /**
  * @license
@@ -14916,7 +14916,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -14954,11 +14954,11 @@ class Database {
 }
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.
@@ -15074,6 +15074,8 @@ function registerDatabase(variant) {
         return repoManagerDatabaseFromApp(app, authProvider, appCheckProvider, url);
     }, "PUBLIC" /* PUBLIC */).setMultipleInstances(true));
     registerVersion(name, version, variant);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
 }
 
 /**

@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -746,7 +746,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.1";
+const version$1 = "0.5.2";
 
 /**
  * @license
@@ -1707,9 +1707,11 @@ function registerInstallations() {
  */
 registerInstallations();
 registerVersion(name$1, version$1);
+// BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/remote-config";
-const version = "0.3.0";
+const version = "0.3.1";
 
 /**
  * @license
@@ -1875,7 +1877,7 @@ class Value {
  */
 /**
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} instance.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} instance.
  * @returns A {@link RemoteConfig} instance.
  *
  * @public
@@ -2774,7 +2776,8 @@ class StorageCache {
         }
         const lastSuccessfulFetchTimestampMillis = await lastSuccessfulFetchTimestampMillisPromise;
         if (lastSuccessfulFetchTimestampMillis) {
-            this.lastSuccessfulFetchTimestampMillis = lastSuccessfulFetchTimestampMillis;
+            this.lastSuccessfulFetchTimestampMillis =
+                lastSuccessfulFetchTimestampMillis;
         }
         const activeConfig = await activeConfigPromise;
         if (activeConfig) {
@@ -2817,6 +2820,8 @@ class StorageCache {
 function registerRemoteConfig() {
     _registerComponent(new Component(RC_COMPONENT_NAME, remoteConfigFactory, "PUBLIC" /* PUBLIC */).setMultipleInstances(true));
     registerVersion(name, version);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
     function remoteConfigFactory(container, { instanceIdentifier: namespace }) {
         /* Dependencies */
         // getImmediate for FirebaseApp will always succeed

@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -539,8 +539,8 @@ function deleteDb(name) {
   return promisifyRequestCall(indexedDB, 'deleteDatabase', [name]);
 }
 
-const name = "@firebase/installations";
-const version = "0.5.1";
+const name$1 = "@firebase/installations";
+const version$1 = "0.5.2";
 
 /**
  * @license
@@ -559,7 +559,7 @@ const version = "0.5.1";
  * limitations under the License.
  */
 const PENDING_TIMEOUT_MS = 10000;
-const PACKAGE_VERSION = `w:${version}`;
+const PACKAGE_VERSION = `w:${version$1}`;
 const INTERNAL_AUTH_VERSION = 'FIS_v2';
 const INSTALLATIONS_API_URL = 'https://firebaseinstallations.googleapis.com/v1';
 const TOKEN_EXPIRATION_BUFFER = 60 * 60 * 1000; // One hour
@@ -1500,7 +1500,9 @@ function registerInstallations() {
  * @packageDocumentation
  */
 registerInstallations();
-registerVersion(name, version);
+registerVersion(name$1, version$1);
+// BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+registerVersion(name$1, version$1, 'esm2017');
 
 /**
  * @license
@@ -2482,6 +2484,9 @@ async function messageEventListener(messaging, event) {
     }
 }
 
+const name = "@firebase/messaging";
+const version = "0.9.2";
+
 /**
  * @license
  * Copyright 2020 Google LLC
@@ -2515,6 +2520,9 @@ const WindowMessagingInternalFactory = (container) => {
 function registerMessagingInWindow() {
     _registerComponent(new Component('messaging', WindowMessagingFactory, "PUBLIC" /* PUBLIC */));
     _registerComponent(new Component('messaging-internal', WindowMessagingInternalFactory, "PRIVATE" /* PRIVATE */));
+    registerVersion(name, version);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
 }
 
 /**

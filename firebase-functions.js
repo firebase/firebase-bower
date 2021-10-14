@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -750,6 +750,9 @@ async function call(functionsInstance, name, data, options) {
     return { data: decodedData };
 }
 
+const name = "@firebase/functions";
+const version = "0.7.3";
+
 /**
  * @license
  * Copyright 2019 Google LLC
@@ -769,7 +772,7 @@ async function call(functionsInstance, name, data, options) {
 const AUTH_INTERNAL_NAME = 'auth-internal';
 const APP_CHECK_INTERNAL_NAME = 'app-check-internal';
 const MESSAGING_INTERNAL_NAME = 'messaging-internal';
-function registerFunctions(fetchImpl) {
+function registerFunctions(fetchImpl, variant) {
     const factory = (container, { instanceIdentifier: regionOrCustomDomain }) => {
         // Dependencies
         const app = container.getProvider('app').getImmediate();
@@ -780,10 +783,10 @@ function registerFunctions(fetchImpl) {
         return new FunctionsService(app, authProvider, messagingProvider, appCheckProvider, regionOrCustomDomain, fetchImpl);
     };
     _registerComponent(new Component(FUNCTIONS_TYPE, factory, "PUBLIC" /* PUBLIC */).setMultipleInstances(true));
+    registerVersion(name, version, variant);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
 }
-
-const name = "@firebase/functions";
-const version = "0.7.2";
 
 /**
  * @license
@@ -803,7 +806,7 @@ const version = "0.7.2";
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)
@@ -844,7 +847,6 @@ function httpsCallable(functionsInstance, name, options) {
  * @packageDocumentation
  */
 registerFunctions(fetch.bind(self));
-registerVersion(name, version);
 
 export { connectFunctionsEmulator, getFunctions, httpsCallable };
 

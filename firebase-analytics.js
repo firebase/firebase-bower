@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -799,7 +799,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.1";
+const version$1 = "0.5.2";
 
 /**
  * @license
@@ -1760,6 +1760,8 @@ function registerInstallations() {
  */
 registerInstallations();
 registerVersion(name$1, version$1);
+// BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+registerVersion(name$1, version$1, 'esm2017');
 
 /**
  * @license
@@ -2698,7 +2700,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2714,7 +2716,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies
@@ -2823,7 +2825,7 @@ function logEvent(analyticsInstance, eventName, eventParams, options) {
 }
 
 const name = "@firebase/analytics";
-const version = "0.7.1";
+const version = "0.7.2";
 
 /**
  * Firebase Analytics
@@ -2841,6 +2843,8 @@ function registerAnalytics() {
     }, "PUBLIC" /* PUBLIC */));
     _registerComponent(new Component('analytics-internal', internalFactory, "PRIVATE" /* PRIVATE */));
     registerVersion(name, version);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
     function internalFactory(container) {
         try {
             const analytics = container.getProvider(ANALYTICS_TYPE).getImmediate();

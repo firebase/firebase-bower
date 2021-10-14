@@ -1021,8 +1021,8 @@ function isVersionServiceProvider(provider) {
     return (component === null || component === void 0 ? void 0 : component.type) === "VERSION" /* VERSION */;
 }
 
-const name$o = "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js";
-const version$1 = "0.7.3";
+const name$o = "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js";
+const version$1 = "0.7.4";
 
 /**
  * @license
@@ -1040,17 +1040,17 @@ const version$1 = "0.7.3";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js');
 
-const name$n = "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js-compat";
+const name$n = "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js-compat";
 
 const name$m = "@firebase/analytics-compat";
 
 const name$l = "@firebase/analytics";
 
-const name$k = "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js-check-compat";
+const name$k = "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js-check-compat";
 
-const name$j = "https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js-check";
+const name$j = "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js-check";
 
 const name$i = "@firebase/auth";
 
@@ -1089,7 +1089,7 @@ const name$2 = "@firebase/firestore";
 const name$1 = "@firebase/firestore-compat";
 
 const name$p = "firebase";
-const version$2 = "9.1.2";
+const version$2 = "9.1.3";
 
 /**
  * @license
@@ -1390,7 +1390,7 @@ function initializeApp(options, rawConfig = {}) {
     return newApp;
 }
 /**
- * Retrieves a {@link https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js#FirebaseApp} instance.
+ * Retrieves a {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} instance.
  *
  * When called with no arguments, the default app is returned. When an app name
  * is provided, the app corresponding to that name is returned.
@@ -1541,6 +1541,8 @@ function registerCoreComponents(variant) {
     _registerComponent(new Component('platform-logger', container => new PlatformLoggerServiceImpl(container), "PRIVATE" /* PRIVATE */));
     // Register `app` package.
     registerVersion(name$o, version$1, variant);
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name$o, version$1, 'esm2017');
     // Register platform SDK identifier (no version).
     registerVersion('fire-js', '');
 }
@@ -1551,10 +1553,10 @@ function registerCoreComponents(variant) {
  * @remarks This package coordinates the communication between the different Firebase components
  * @packageDocumentation
  */
-registerCoreComponents();
+registerCoreComponents('');
 
 var name = "firebase";
-var version = "9.1.2";
+var version = "9.1.3";
 
 /**
  * @license

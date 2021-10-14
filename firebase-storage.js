@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
 
 /**
  * @license
@@ -1239,6 +1239,7 @@ class NetworkRequest {
             if (this.progressCallback_ !== null) {
                 connection.addUploadProgressListener(progressListener);
             }
+            // connection.send() never rejects, so we don't need to have a error handler or use catch on the returned promise.
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             connection
                 .send(this.url_, this.method_, this.body_, this.headers_)
@@ -3662,7 +3663,7 @@ class FirebaseStorageImpl {
 }
 
 const name = "@firebase/storage";
-const version = "0.8.3";
+const version = "0.8.4";
 
 /**
  * @license
@@ -3888,7 +3889,10 @@ function factory(container, { instanceIdentifier: url }) {
 }
 function registerStorage() {
     _registerComponent(new Component(STORAGE_TYPE, factory, "PUBLIC" /* PUBLIC */).setMultipleInstances(true));
-    registerVersion(name, version);
+    //RUNTIME_ENV will be replaced during the compilation to "node" for nodejs and an empty string for browser
+    registerVersion(name, version, '');
+    // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
+    registerVersion(name, version, 'esm2017');
 }
 registerStorage();
 
