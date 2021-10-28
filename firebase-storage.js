@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
 
 /**
  * @license
@@ -537,32 +537,6 @@ var Component = /** @class */ (function () {
  * limitations under the License.
  */
 /**
- * Error codes for requests made by the the XhrIo wrapper.
- */
-var ErrorCode;
-(function (ErrorCode) {
-    ErrorCode[ErrorCode["NO_ERROR"] = 0] = "NO_ERROR";
-    ErrorCode[ErrorCode["NETWORK_ERROR"] = 1] = "NETWORK_ERROR";
-    ErrorCode[ErrorCode["ABORT"] = 2] = "ABORT";
-})(ErrorCode || (ErrorCode = {}));
-
-/**
- * @license
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
  * @fileoverview Constants used in the Firebase Storage library.
  */
 /**
@@ -716,136 +690,6 @@ function invalidFormat(format, message) {
  */
 function internalError(message) {
     throw new StorageError("internal-error" /* INTERNAL_ERROR */, 'Internal error: ' + message);
-}
-
-/**
- * @license
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
- * Network layer for browsers. We use this instead of goog.net.XhrIo because
- * goog.net.XhrIo is hyuuuuge and doesn't work in React Native on Android.
- */
-class XhrConnection {
-    constructor() {
-        this.sent_ = false;
-        this.xhr_ = new XMLHttpRequest();
-        this.errorCode_ = ErrorCode.NO_ERROR;
-        this.sendPromise_ = new Promise(resolve => {
-            this.xhr_.addEventListener('abort', () => {
-                this.errorCode_ = ErrorCode.ABORT;
-                resolve();
-            });
-            this.xhr_.addEventListener('error', () => {
-                this.errorCode_ = ErrorCode.NETWORK_ERROR;
-                resolve();
-            });
-            this.xhr_.addEventListener('load', () => {
-                resolve();
-            });
-        });
-    }
-    send(url, method, body, headers) {
-        if (this.sent_) {
-            throw internalError('cannot .send() more than once');
-        }
-        this.sent_ = true;
-        this.xhr_.open(method, url, true);
-        if (headers !== undefined) {
-            for (const key in headers) {
-                if (headers.hasOwnProperty(key)) {
-                    this.xhr_.setRequestHeader(key, headers[key].toString());
-                }
-            }
-        }
-        if (body !== undefined) {
-            this.xhr_.send(body);
-        }
-        else {
-            this.xhr_.send();
-        }
-        return this.sendPromise_;
-    }
-    getErrorCode() {
-        if (!this.sent_) {
-            throw internalError('cannot .getErrorCode() before sending');
-        }
-        return this.errorCode_;
-    }
-    getStatus() {
-        if (!this.sent_) {
-            throw internalError('cannot .getStatus() before sending');
-        }
-        try {
-            return this.xhr_.status;
-        }
-        catch (e) {
-            return -1;
-        }
-    }
-    getResponseText() {
-        if (!this.sent_) {
-            throw internalError('cannot .getResponseText() before sending');
-        }
-        return this.xhr_.responseText;
-    }
-    /** Aborts the request. */
-    abort() {
-        this.xhr_.abort();
-    }
-    getResponseHeader(header) {
-        return this.xhr_.getResponseHeader(header);
-    }
-    addUploadProgressListener(listener) {
-        if (this.xhr_.upload != null) {
-            this.xhr_.upload.addEventListener('progress', listener);
-        }
-    }
-    removeUploadProgressListener(listener) {
-        if (this.xhr_.upload != null) {
-            this.xhr_.upload.removeEventListener('progress', listener);
-        }
-    }
-}
-function newConnection() {
-    return new XhrConnection();
-}
-
-/**
- * @license
- * Copyright 2017 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-/**
- * Factory-like class for creating XhrIo instances.
- */
-class ConnectionPool {
-    createConnection() {
-        return newConnection();
-    }
 }
 
 /**
@@ -1193,8 +1037,34 @@ function makeQueryString(params) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Error codes for requests made by the the XhrIo wrapper.
+ */
+var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode[ErrorCode["NO_ERROR"] = 0] = "NO_ERROR";
+    ErrorCode[ErrorCode["NETWORK_ERROR"] = 1] = "NETWORK_ERROR";
+    ErrorCode[ErrorCode["ABORT"] = 2] = "ABORT";
+})(ErrorCode || (ErrorCode = {}));
+
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 class NetworkRequest {
-    constructor(url_, method_, headers_, body_, successCodes_, additionalRetryCodes_, callback_, errorCallback_, timeout_, progressCallback_, pool_) {
+    constructor(url_, method_, headers_, body_, successCodes_, additionalRetryCodes_, callback_, errorCallback_, timeout_, progressCallback_, connectionFactory_) {
         this.url_ = url_;
         this.method_ = method_;
         this.headers_ = headers_;
@@ -1205,7 +1075,7 @@ class NetworkRequest {
         this.errorCallback_ = errorCallback_;
         this.timeout_ = timeout_;
         this.progressCallback_ = progressCallback_;
-        this.pool_ = pool_;
+        this.connectionFactory_ = connectionFactory_;
         this.pendingConnection_ = null;
         this.backoffId_ = null;
         this.canceled_ = false;
@@ -1225,7 +1095,7 @@ class NetworkRequest {
                 backoffCallback(false, new RequestEndStatus(false, null, true));
                 return;
             }
-            const connection = this.pool_.createConnection();
+            const connection = this.connectionFactory_();
             this.pendingConnection_ = connection;
             const progressListener = progressEvent => {
                 const loaded = progressEvent.loaded;
@@ -1371,7 +1241,7 @@ function addAppCheckHeader_(headers, appCheckToken) {
         headers['X-Firebase-AppCheck'] = appCheckToken;
     }
 }
-function makeRequest(requestInfo, appId, authToken, appCheckToken, pool, firebaseVersion) {
+function makeRequest(requestInfo, appId, authToken, appCheckToken, requestFactory, firebaseVersion) {
     const queryPart = makeQueryString(requestInfo.urlParams);
     const url = requestInfo.url + queryPart;
     const headers = Object.assign({}, requestInfo.headers);
@@ -1379,7 +1249,7 @@ function makeRequest(requestInfo, appId, authToken, appCheckToken, pool, firebas
     addAuthHeader_(headers, authToken);
     addVersionHeader_(headers, firebaseVersion);
     addAppCheckHeader_(headers, appCheckToken);
-    return new NetworkRequest(url, requestInfo.method, headers, requestInfo.body, requestInfo.successCodes, requestInfo.additionalRetryCodes, requestInfo.handler, requestInfo.errorHandler, requestInfo.timeout, requestInfo.progressCallback, pool);
+    return new NetworkRequest(url, requestInfo.method, headers, requestInfo.body, requestInfo.successCodes, requestInfo.additionalRetryCodes, requestInfo.handler, requestInfo.errorHandler, requestInfo.timeout, requestInfo.progressCallback, requestFactory);
 }
 
 /**
@@ -2630,6 +2500,94 @@ function async(f) {
         Promise.resolve().then(() => f(...argsToForward));
     };
 }
+/**
+ * Network layer for browsers. We use this instead of goog.net.XhrIo because
+ * goog.net.XhrIo is hyuuuuge and doesn't work in React Native on Android.
+ */
+class XhrConnection {
+    constructor() {
+        this.sent_ = false;
+        this.xhr_ = new XMLHttpRequest();
+        this.errorCode_ = ErrorCode.NO_ERROR;
+        this.sendPromise_ = new Promise(resolve => {
+            this.xhr_.addEventListener('abort', () => {
+                this.errorCode_ = ErrorCode.ABORT;
+                resolve();
+            });
+            this.xhr_.addEventListener('error', () => {
+                this.errorCode_ = ErrorCode.NETWORK_ERROR;
+                resolve();
+            });
+            this.xhr_.addEventListener('load', () => {
+                resolve();
+            });
+        });
+    }
+    send(url, method, body, headers) {
+        if (this.sent_) {
+            throw internalError('cannot .send() more than once');
+        }
+        this.sent_ = true;
+        this.xhr_.open(method, url, true);
+        if (headers !== undefined) {
+            for (const key in headers) {
+                if (headers.hasOwnProperty(key)) {
+                    this.xhr_.setRequestHeader(key, headers[key].toString());
+                }
+            }
+        }
+        if (body !== undefined) {
+            this.xhr_.send(body);
+        }
+        else {
+            this.xhr_.send();
+        }
+        return this.sendPromise_;
+    }
+    getErrorCode() {
+        if (!this.sent_) {
+            throw internalError('cannot .getErrorCode() before sending');
+        }
+        return this.errorCode_;
+    }
+    getStatus() {
+        if (!this.sent_) {
+            throw internalError('cannot .getStatus() before sending');
+        }
+        try {
+            return this.xhr_.status;
+        }
+        catch (e) {
+            return -1;
+        }
+    }
+    getResponseText() {
+        if (!this.sent_) {
+            throw internalError('cannot .getResponseText() before sending');
+        }
+        return this.xhr_.responseText;
+    }
+    /** Aborts the request. */
+    abort() {
+        this.xhr_.abort();
+    }
+    getResponseHeader(header) {
+        return this.xhr_.getResponseHeader(header);
+    }
+    addUploadProgressListener(listener) {
+        if (this.xhr_.upload != null) {
+            this.xhr_.upload.addEventListener('progress', listener);
+        }
+    }
+    removeUploadProgressListener(listener) {
+        if (this.xhr_.upload != null) {
+            this.xhr_.upload.removeEventListener('progress', listener);
+        }
+    }
+}
+function newConnection() {
+    return new XhrConnection();
+}
 
 /**
  * @license
@@ -2770,7 +2728,7 @@ class UploadTask {
     _createResumable() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = createResumableUpload(this._ref.storage, this._ref._location, this._mappings, this._blob, this._metadata);
-            const createRequest = this._ref.storage._makeRequest(requestInfo, authToken, appCheckToken);
+            const createRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
             this._request = createRequest;
             createRequest.getPromise().then((url) => {
                 this._request = undefined;
@@ -2785,7 +2743,7 @@ class UploadTask {
         const url = this._uploadUrl;
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = getResumableUploadStatus(this._ref.storage, this._ref._location, url, this._blob);
-            const statusRequest = this._ref.storage._makeRequest(requestInfo, authToken, appCheckToken);
+            const statusRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
             this._request = statusRequest;
             statusRequest.getPromise().then(status => {
                 status = status;
@@ -2814,7 +2772,7 @@ class UploadTask {
                 this._transition("error" /* ERROR */);
                 return;
             }
-            const uploadRequest = this._ref.storage._makeRequest(requestInfo, authToken, appCheckToken);
+            const uploadRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
             this._request = uploadRequest;
             uploadRequest.getPromise().then((newStatus) => {
                 this._increaseMultiplier();
@@ -2840,7 +2798,7 @@ class UploadTask {
     _fetchMetadata() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = getMetadata$2(this._ref.storage, this._ref._location, this._mappings);
-            const metadataRequest = this._ref.storage._makeRequest(requestInfo, authToken, appCheckToken);
+            const metadataRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
             this._request = metadataRequest;
             metadataRequest.getPromise().then(metadata => {
                 this._request = undefined;
@@ -2852,7 +2810,7 @@ class UploadTask {
     _oneShotUpload() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = multipartUpload(this._ref.storage, this._ref._location, this._mappings, this._blob, this._metadata);
-            const multipartRequest = this._ref.storage._makeRequest(requestInfo, authToken, appCheckToken);
+            const multipartRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
             this._request = multipartRequest;
             multipartRequest.getPromise().then(metadata => {
                 this._request = undefined;
@@ -3230,8 +3188,7 @@ function uploadBytes$1(ref, data, metadata) {
     ref._throwIfRoot('uploadBytes');
     const requestInfo = multipartUpload(ref.storage, ref._location, getMappings(), new FbsBlob(data, true), metadata);
     return ref.storage
-        .makeRequestWithTokens(requestInfo)
-        .then(request => request.getPromise())
+        .makeRequestWithTokens(requestInfo, newConnection)
         .then(finalMetadata => {
         return {
             metadata: finalMetadata,
@@ -3337,7 +3294,7 @@ async function listAllHelper(ref, accumulator, pageToken) {
  *      contains references to objects in this folder. `nextPageToken`
  *      can be used to get the rest of the results.
  */
-async function list$1(ref, options) {
+function list$1(ref, options) {
     if (options != null) {
         if (typeof options.maxResults === 'number') {
             validateNumber('options.maxResults', 
@@ -3348,7 +3305,7 @@ async function list$1(ref, options) {
     const op = options || {};
     const requestInfo = list$2(ref.storage, ref._location, 
     /*delimiter= */ '/', op.pageToken, op.maxResults);
-    return (await ref.storage.makeRequestWithTokens(requestInfo)).getPromise();
+    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
 }
 /**
  * A `Promise` that resolves with the metadata for this object. If this
@@ -3357,10 +3314,10 @@ async function list$1(ref, options) {
  * @public
  * @param ref - StorageReference to get metadata from.
  */
-async function getMetadata$1(ref) {
+function getMetadata$1(ref) {
     ref._throwIfRoot('getMetadata');
     const requestInfo = getMetadata$2(ref.storage, ref._location, getMappings());
-    return (await ref.storage.makeRequestWithTokens(requestInfo)).getPromise();
+    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
 }
 /**
  * Updates the metadata for this object.
@@ -3373,10 +3330,10 @@ async function getMetadata$1(ref) {
  *     with the new metadata for this object.
  *     See `firebaseStorage.Reference.prototype.getMetadata`
  */
-async function updateMetadata$1(ref, metadata) {
+function updateMetadata$1(ref, metadata) {
     ref._throwIfRoot('updateMetadata');
     const requestInfo = updateMetadata$2(ref.storage, ref._location, metadata, getMappings());
-    return (await ref.storage.makeRequestWithTokens(requestInfo)).getPromise();
+    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
 }
 /**
  * Returns the download URL for the given Reference.
@@ -3384,11 +3341,11 @@ async function updateMetadata$1(ref, metadata) {
  * @returns A `Promise` that resolves with the download
  *     URL for this object.
  */
-async function getDownloadURL$1(ref) {
+function getDownloadURL$1(ref) {
     ref._throwIfRoot('getDownloadURL');
     const requestInfo = getDownloadUrl(ref.storage, ref._location, getMappings());
-    return (await ref.storage.makeRequestWithTokens(requestInfo))
-        .getPromise()
+    return ref.storage
+        .makeRequestWithTokens(requestInfo, newConnection)
         .then(url => {
         if (url === null) {
             throw noDownloadURL();
@@ -3402,10 +3359,10 @@ async function getDownloadURL$1(ref) {
  * @param ref - StorageReference for object to delete.
  * @returns A `Promise` that resolves if the deletion succeeds.
  */
-async function deleteObject$1(ref) {
+function deleteObject$1(ref) {
     ref._throwIfRoot('deleteObject');
     const requestInfo = deleteObject$2(ref.storage, ref._location);
-    return (await ref.storage.makeRequestWithTokens(requestInfo)).getPromise();
+    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
 }
 /**
  * Returns reference for object obtained by appending `childPath` to `ref`.
@@ -3526,11 +3483,10 @@ class FirebaseStorageImpl {
     /**
      * @internal
      */
-    _pool, _url, _firebaseVersion) {
+    _url, _firebaseVersion) {
         this.app = app;
         this._authProvider = _authProvider;
         this._appCheckProvider = _appCheckProvider;
-        this._pool = _pool;
         this._url = _url;
         this._firebaseVersion = _firebaseVersion;
         this._bucket = null;
@@ -3641,9 +3597,9 @@ class FirebaseStorageImpl {
      * @param requestInfo - HTTP RequestInfo object
      * @param authToken - Firebase auth token
      */
-    _makeRequest(requestInfo, authToken, appCheckToken) {
+    _makeRequest(requestInfo, requestFactory, authToken, appCheckToken) {
         if (!this._deleted) {
-            const request = makeRequest(requestInfo, this._appId, authToken, appCheckToken, this._pool, this._firebaseVersion);
+            const request = makeRequest(requestInfo, this._appId, authToken, appCheckToken, requestFactory, this._firebaseVersion);
             this._requests.add(request);
             // Request removes itself from set when complete.
             request.getPromise().then(() => this._requests.delete(request), () => this._requests.delete(request));
@@ -3653,12 +3609,12 @@ class FirebaseStorageImpl {
             return new FailRequest(appDeleted());
         }
     }
-    async makeRequestWithTokens(requestInfo) {
+    async makeRequestWithTokens(requestInfo, requestFactory) {
         const [authToken, appCheckToken] = await Promise.all([
             this._getAuthToken(),
             this._getAppCheckToken()
         ]);
-        return this._makeRequest(requestInfo, authToken, appCheckToken);
+        return this._makeRequest(requestInfo, requestFactory, authToken, appCheckToken).getPromise();
     }
 }
 
@@ -3885,7 +3841,7 @@ function factory(container, { instanceIdentifier: url }) {
     const app = container.getProvider('app').getImmediate();
     const authProvider = container.getProvider('auth-internal');
     const appCheckProvider = container.getProvider('app-check-internal');
-    return new FirebaseStorageImpl(app, authProvider, appCheckProvider, new ConnectionPool(), url, SDK_VERSION);
+    return new FirebaseStorageImpl(app, authProvider, appCheckProvider, url, SDK_VERSION);
 }
 function registerStorage() {
     _registerComponent(new Component(STORAGE_TYPE, factory, "PUBLIC" /* PUBLIC */).setMultipleInstances(true));

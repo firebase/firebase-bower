@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
 
 /**
  * @license
@@ -2008,7 +2008,7 @@ async function _performSignInRequest(auth, method, path, request, customErrorMap
     const serverResponse = (await _performApiRequest(auth, method, path, request, customErrorMap));
     if ('mfaPendingCredential' in serverResponse) {
         _fail(auth, "multi-factor-auth-required" /* MFA_REQUIRED */, {
-            serverResponse
+            _serverResponse: serverResponse
         });
     }
     return serverResponse;
@@ -5439,14 +5439,14 @@ class MultiFactorError extends FirebaseError {
         super(error.code, error.message);
         this.operationType = operationType;
         this.user = user;
-        this.name = 'FirebaseError';
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
         Object.setPrototypeOf(this, MultiFactorError.prototype);
-        this.appName = auth.name;
-        this.code = error.code;
-        this.tenantId = (_a = auth.tenantId) !== null && _a !== void 0 ? _a : undefined;
-        this.serverResponse = error.customData
-            .serverResponse;
+        this.customData = {
+            appName: auth.name,
+            tenantId: (_a = auth.tenantId) !== null && _a !== void 0 ? _a : undefined,
+            _serverResponse: error.customData._serverResponse,
+            operationType,
+        };
     }
     static _fromErrorAndOperation(auth, error, operationType, user) {
         return new MultiFactorError(auth, error, operationType, user);
@@ -6695,16 +6695,17 @@ class MultiFactorResolverImpl {
     /** @internal */
     static _fromError(authExtern, error) {
         const auth = _castAuth(authExtern);
-        const hints = (error.serverResponse.mfaInfo || []).map(enrollment => MultiFactorInfoImpl._fromServerResponse(auth, enrollment));
-        _assert(error.serverResponse.mfaPendingCredential, auth, "internal-error" /* INTERNAL_ERROR */);
-        const session = MultiFactorSessionImpl._fromMfaPendingCredential(error.serverResponse.mfaPendingCredential);
+        const serverResponse = error.customData._serverResponse;
+        const hints = (serverResponse.mfaInfo || []).map(enrollment => MultiFactorInfoImpl._fromServerResponse(auth, enrollment));
+        _assert(serverResponse.mfaPendingCredential, auth, "internal-error" /* INTERNAL_ERROR */);
+        const session = MultiFactorSessionImpl._fromMfaPendingCredential(serverResponse.mfaPendingCredential);
         return new MultiFactorResolverImpl(session, hints, async (assertion) => {
             const mfaResponse = await assertion._process(auth, session);
             // Clear out the unneeded fields from the old login response
-            delete error.serverResponse.mfaInfo;
-            delete error.serverResponse.mfaPendingCredential;
+            delete serverResponse.mfaInfo;
+            delete serverResponse.mfaPendingCredential;
             // Use in the new token & refresh token in the old response
-            const idTokenResponse = Object.assign(Object.assign({}, error.serverResponse), { idToken: mfaResponse.idToken, refreshToken: mfaResponse.refreshToken });
+            const idTokenResponse = Object.assign(Object.assign({}, serverResponse), { idToken: mfaResponse.idToken, refreshToken: mfaResponse.refreshToken });
             // TODO: we should collapse this switch statement into UserCredentialImpl._forOperation and have it support the SIGN_IN case
             switch (error.operationType) {
                 case "signIn" /* SIGN_IN */:
@@ -6738,8 +6739,8 @@ function getMultiFactorResolver(auth, error) {
     var _a;
     const authModular = getModularInstance(auth);
     const errorInternal = error;
-    _assert(error.operationType, authModular, "argument-error" /* ARGUMENT_ERROR */);
-    _assert((_a = errorInternal.serverResponse) === null || _a === void 0 ? void 0 : _a.mfaPendingCredential, authModular, "argument-error" /* ARGUMENT_ERROR */);
+    _assert(error.customData.operationType, authModular, "argument-error" /* ARGUMENT_ERROR */);
+    _assert((_a = errorInternal.customData._serverResponse) === null || _a === void 0 ? void 0 : _a.mfaPendingCredential, authModular, "argument-error" /* ARGUMENT_ERROR */);
     return MultiFactorResolverImpl._fromError(authModular, errorInternal);
 }
 
@@ -6862,8 +6863,8 @@ const STORAGE_AVAILABLE_KEY = '__sak';
 // Both have the same implementation but use a different underlying storage
 // object.
 class BrowserPersistenceClass {
-    constructor(storage, type) {
-        this.storage = storage;
+    constructor(storageRetriever, type) {
+        this.storageRetriever = storageRetriever;
         this.type = type;
     }
     _isAvailable() {
@@ -6890,6 +6891,9 @@ class BrowserPersistenceClass {
     _remove(key) {
         this.storage.removeItem(key);
         return Promise.resolve();
+    }
+    get storage() {
+        return this.storageRetriever();
     }
 }
 
@@ -6919,7 +6923,7 @@ const _POLLING_INTERVAL_MS$1 = 1000;
 const IE10_LOCAL_STORAGE_SYNC_DELAY = 10;
 class BrowserLocalPersistence extends BrowserPersistenceClass {
     constructor() {
-        super(window.localStorage, "LOCAL" /* LOCAL */);
+        super(() => window.localStorage, "LOCAL" /* LOCAL */);
         this.boundEventHandler = (event, poll) => this.onStorageEvent(event, poll);
         this.listeners = {};
         this.localCache = {};
@@ -7120,7 +7124,7 @@ const browserLocalPersistence = BrowserLocalPersistence;
  */
 class BrowserSessionPersistence extends BrowserPersistenceClass {
     constructor() {
-        super(window.sessionStorage, "SESSION" /* SESSION */);
+        super(() => window.sessionStorage, "SESSION" /* SESSION */);
     }
     _addListener(_key, _listener) {
         // Listeners are not supported for session storage since it cannot be shared across windows
@@ -8401,6 +8405,9 @@ class ConfirmationResultImpl {
  *
  * For abuse prevention, this method also requires a {@link ApplicationVerifier}.
  * This SDK includes a reCAPTCHA-based implementation, {@link RecaptchaVerifier}.
+ * This function can work on other platforms that do not support the
+ * {@link RecaptchaVerifier} (like React Native), but you need to use a
+ * third-party {@link ApplicationVerifier} implementation.
  *
  * @example
  * ```javascript
@@ -9139,6 +9146,11 @@ class RedirectAction extends AbstractPopupRedirectOperation {
             }
             redirectOutcomeMap.set(this.auth._key(), readyOutcome);
         }
+        // If we're not bypassing auth state, the ready outcome should be set to
+        // null.
+        if (!this.bypassAuthState) {
+            redirectOutcomeMap.set(this.auth._key(), () => Promise.resolve(null));
+        }
         return readyOutcome();
     }
     async onAuthEvent(event) {
@@ -9166,8 +9178,12 @@ class RedirectAction extends AbstractPopupRedirectOperation {
 }
 async function _getAndClearPendingRedirectStatus(resolver, auth) {
     const key = pendingRedirectKey(auth);
-    const hasPendingRedirect = (await resolverPersistence(resolver)._get(key)) === 'true';
-    await resolverPersistence(resolver)._remove(key);
+    const persistence = resolverPersistence(resolver);
+    if (!(await persistence._isAvailable())) {
+        return false;
+    }
+    const hasPendingRedirect = (await persistence._get(key)) === 'true';
+    await persistence._remove(key);
     return hasPendingRedirect;
 }
 async function _setPendingRedirectStatus(resolver, auth) {
@@ -9723,7 +9739,8 @@ const IFRAME_ATTRIBUTES = {
         top: '-100px',
         width: '1px',
         height: '1px'
-    }
+    },
+    'aria-hidden': 'true'
 };
 // Map from apiHost to endpoint ID for passing into iframe. In current SDK, apiHost can be set to
 // anything (not from a list of endpoints with IDs as in legacy), so this is the closest we can get.
@@ -10119,7 +10136,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.18.3";
+var version = "0.19.0";
 
 /**
  * @license
@@ -10285,7 +10302,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

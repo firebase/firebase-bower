@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
 
 /**
  * @license
@@ -1877,7 +1877,7 @@ class Value {
  */
 /**
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js#FirebaseApp} instance.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} instance.
  * @returns A {@link RemoteConfig} instance.
  *
  * @public
