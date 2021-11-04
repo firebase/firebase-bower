@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -599,14 +599,14 @@ function getModularInstance(service) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -618,24 +618,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 /**
  * @license
@@ -846,6 +845,7 @@ function getDebugState() {
  */
 const BASE_ENDPOINT = 'https://content-firebaseappcheck.googleapis.com/v1beta';
 const EXCHANGE_RECAPTCHA_TOKEN_METHOD = 'exchangeRecaptchaToken';
+const EXCHANGE_RECAPTCHA_ENTERPRISE_TOKEN_METHOD = 'exchangeRecaptchaEnterpriseToken';
 const EXCHANGE_DEBUG_TOKEN_METHOD = 'exchangeDebugToken';
 const TOKEN_REFRESH_TIME = {
     /**
@@ -1023,7 +1023,11 @@ const ERROR_FACTORY = new ErrorFactory('appCheck', 'AppCheck', ERRORS);
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-function getRecaptcha() {
+function getRecaptcha(isEnterprise = false) {
+    var _a;
+    if (isEnterprise) {
+        return (_a = self.grecaptcha) === null || _a === void 0 ? void 0 : _a.enterprise;
+    }
     return self.grecaptcha;
 }
 function ensureActivated(app) {
@@ -1116,13 +1120,21 @@ async function exchangeToken({ url, body }, platformLoggerProvider) {
         issuedAtTimeMillis: now
     };
 }
-function getExchangeRecaptchaTokenRequest(app, reCAPTCHAToken) {
+function getExchangeRecaptchaV3TokenRequest(app, reCAPTCHAToken) {
     const { projectId, appId, apiKey } = app.options;
     return {
         url: `${BASE_ENDPOINT}/projects/${projectId}/apps/${appId}:${EXCHANGE_RECAPTCHA_TOKEN_METHOD}?key=${apiKey}`,
         body: {
-            // eslint-disable-next-line
-            recaptcha_token: reCAPTCHAToken
+            'recaptcha_token': reCAPTCHAToken
+        }
+    };
+}
+function getExchangeRecaptchaEnterpriseTokenRequest(app, reCAPTCHAToken) {
+    const { projectId, appId, apiKey } = app.options;
+    return {
+        url: `${BASE_ENDPOINT}/projects/${projectId}/apps/${appId}:${EXCHANGE_RECAPTCHA_ENTERPRISE_TOKEN_METHOD}?key=${apiKey}`,
+        body: {
+            'recaptcha_enterprise_token': reCAPTCHAToken
         }
     };
 }
@@ -1272,7 +1284,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js-check');
 
 /**
  * @license
@@ -1679,8 +1691,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js-check";
-const version = "0.4.2";
+const name = "https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js-check";
+const version = "0.5.0";
 
 /**
  * @license
@@ -1699,37 +1711,71 @@ const version = "0.4.2";
  * limitations under the License.
  */
 const RECAPTCHA_URL = 'https://www.google.com/recaptcha/api.js';
-function initialize(app, siteKey) {
+const RECAPTCHA_ENTERPRISE_URL = 'https://www.google.com/recaptcha/enterprise.js';
+function initializeV3(app, siteKey) {
     const state = getState(app);
     const initialized = new Deferred();
     setState(app, Object.assign(Object.assign({}, state), { reCAPTCHAState: { initialized } }));
+    const divId = makeDiv(app);
+    const grecaptcha = getRecaptcha(false);
+    if (!grecaptcha) {
+        loadReCAPTCHAV3Script(() => {
+            const grecaptcha = getRecaptcha(false);
+            if (!grecaptcha) {
+                // it shouldn't happen.
+                throw new Error('no recaptcha');
+            }
+            queueWidgetRender(app, siteKey, grecaptcha, divId, initialized);
+        });
+    }
+    else {
+        queueWidgetRender(app, siteKey, grecaptcha, divId, initialized);
+    }
+    return initialized.promise;
+}
+function initializeEnterprise(app, siteKey) {
+    const state = getState(app);
+    const initialized = new Deferred();
+    setState(app, Object.assign(Object.assign({}, state), { reCAPTCHAState: { initialized } }));
+    const divId = makeDiv(app);
+    const grecaptcha = getRecaptcha(true);
+    if (!grecaptcha) {
+        loadReCAPTCHAEnterpriseScript(() => {
+            const grecaptcha = getRecaptcha(true);
+            if (!grecaptcha) {
+                // it shouldn't happen.
+                throw new Error('no recaptcha');
+            }
+            queueWidgetRender(app, siteKey, grecaptcha, divId, initialized);
+        });
+    }
+    else {
+        queueWidgetRender(app, siteKey, grecaptcha, divId, initialized);
+    }
+    return initialized.promise;
+}
+/**
+ * Add listener to render the widget and resolve the promise when
+ * the grecaptcha.ready() event fires.
+ */
+function queueWidgetRender(app, siteKey, grecaptcha, container, initialized) {
+    grecaptcha.ready(() => {
+        // Invisible widgets allow us to set a different siteKey for each widget,
+        // so we use them to support multiple apps
+        renderInvisibleWidget(app, siteKey, grecaptcha, container);
+        initialized.resolve(grecaptcha);
+    });
+}
+/**
+ * Add invisible div to page.
+ */
+function makeDiv(app) {
     const divId = `fire_app_check_${app.name}`;
     const invisibleDiv = document.createElement('div');
     invisibleDiv.id = divId;
     invisibleDiv.style.display = 'none';
     document.body.appendChild(invisibleDiv);
-    const grecaptcha = getRecaptcha();
-    if (!grecaptcha) {
-        loadReCAPTCHAScript(() => {
-            const grecaptcha = getRecaptcha();
-            if (!grecaptcha) {
-                // it shouldn't happen.
-                throw new Error('no recaptcha');
-            }
-            grecaptcha.ready(() => {
-                // Invisible widgets allow us to set a different siteKey for each widget, so we use them to support multiple apps
-                renderInvisibleWidget(app, siteKey, grecaptcha, divId);
-                initialized.resolve(grecaptcha);
-            });
-        });
-    }
-    else {
-        grecaptcha.ready(() => {
-            renderInvisibleWidget(app, siteKey, grecaptcha, divId);
-            initialized.resolve(grecaptcha);
-        });
-    }
-    return initialized.promise;
+    return divId;
 }
 async function getToken$1(app) {
     ensureActivated(app);
@@ -1762,9 +1808,15 @@ function renderInvisibleWidget(app, siteKey, grecaptcha, container) {
     setState(app, Object.assign(Object.assign({}, state), { reCAPTCHAState: Object.assign(Object.assign({}, state.reCAPTCHAState), { // state.reCAPTCHAState is set in the initialize()
             widgetId }) }));
 }
-function loadReCAPTCHAScript(onload) {
+function loadReCAPTCHAV3Script(onload) {
     const script = document.createElement('script');
-    script.src = `${RECAPTCHA_URL}`;
+    script.src = RECAPTCHA_URL;
+    script.onload = onload;
+    document.head.appendChild(script);
+}
+function loadReCAPTCHAEnterpriseScript(onload) {
+    const script = document.createElement('script');
+    script.src = RECAPTCHA_ENTERPRISE_URL;
     script.onload = onload;
     document.head.appendChild(script);
 }
@@ -1804,19 +1856,13 @@ class ReCaptchaV3Provider {
      * @internal
      */
     async getToken() {
-        if (!this._app || !this._platformLoggerProvider) {
-            // This should only occur if user has not called initializeAppCheck().
-            // We don't have an appName to provide if so.
-            // This should already be caught in the top level `getToken()` function.
-            throw ERROR_FACTORY.create("use-before-activation" /* USE_BEFORE_ACTIVATION */, {
-                appName: ''
-            });
-        }
+        // Top-level `getToken()` has already checked that App Check is initialized
+        // and therefore this._app and this._platformLoggerProvider are available.
         const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
             // reCaptcha.execute() throws null which is not very descriptive.
             throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
         });
-        return exchangeToken(getExchangeRecaptchaTokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+        return exchangeToken(getExchangeRecaptchaV3TokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
     }
     /**
      * @internal
@@ -1824,7 +1870,7 @@ class ReCaptchaV3Provider {
     initialize(app) {
         this._app = app;
         this._platformLoggerProvider = _getProvider(app, 'platform-logger');
-        initialize(app, this._siteKey).catch(() => {
+        initializeV3(app, this._siteKey).catch(() => {
             /* we don't care about the initialization result */
         });
     }
@@ -1833,6 +1879,55 @@ class ReCaptchaV3Provider {
      */
     isEqual(otherProvider) {
         if (otherProvider instanceof ReCaptchaV3Provider) {
+            return this._siteKey === otherProvider._siteKey;
+        }
+        else {
+            return false;
+        }
+    }
+}
+/**
+ * App Check provider that can obtain a reCAPTCHA Enterprise token and exchange it
+ * for an App Check token.
+ *
+ * @public
+ */
+class ReCaptchaEnterpriseProvider {
+    /**
+     * Create a ReCaptchaEnterpriseProvider instance.
+     * @param siteKey - reCAPTCHA Enterprise score-based site key.
+     */
+    constructor(_siteKey) {
+        this._siteKey = _siteKey;
+    }
+    /**
+     * Returns an App Check token.
+     * @internal
+     */
+    async getToken() {
+        // Top-level `getToken()` has already checked that App Check is initialized
+        // and therefore this._app and this._platformLoggerProvider are available.
+        const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
+            // reCaptcha.execute() throws null which is not very descriptive.
+            throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
+        });
+        return exchangeToken(getExchangeRecaptchaEnterpriseTokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+    }
+    /**
+     * @internal
+     */
+    initialize(app) {
+        this._app = app;
+        this._platformLoggerProvider = _getProvider(app, 'platform-logger');
+        initializeEnterprise(app, this._siteKey).catch(() => {
+            /* we don't care about the initialization result */
+        });
+    }
+    /**
+     * @internal
+     */
+    isEqual(otherProvider) {
+        if (otherProvider instanceof ReCaptchaEnterpriseProvider) {
             return this._siteKey === otherProvider._siteKey;
         }
         else {
@@ -1852,14 +1947,6 @@ class CustomProvider {
      * @internal
      */
     async getToken() {
-        if (!this._app) {
-            // This should only occur if user has not called initializeAppCheck().
-            // We don't have an appName to provide if so.
-            // This should already be caught in the top level `getToken()` function.
-            throw ERROR_FACTORY.create("use-before-activation" /* USE_BEFORE_ACTIVATION */, {
-                appName: ''
-            });
-        }
         // custom provider
         const customToken = await this._customProviderOptions.getToken();
         // Try to extract IAT from custom token, in case this token is not
@@ -1912,7 +1999,7 @@ class CustomProvider {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */
@@ -2083,6 +2170,6 @@ function registerAppCheck() {
 }
 registerAppCheck();
 
-export { CustomProvider, ReCaptchaV3Provider, getToken, initializeAppCheck, onTokenChanged, setTokenAutoRefreshEnabled };
+export { CustomProvider, ReCaptchaEnterpriseProvider, ReCaptchaV3Provider, getToken, initializeAppCheck, onTokenChanged, setTokenAutoRefreshEnabled };
 
 //# sourceMappingURL=firebase-app-check.js.map

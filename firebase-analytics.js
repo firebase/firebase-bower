@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -460,14 +460,14 @@ function getModularInstance(service) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -479,24 +479,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 function toArray(arr) {
   return Array.prototype.slice.call(arr);
@@ -799,7 +798,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.2";
+const version$1 = "0.5.3";
 
 /**
  * @license
@@ -2700,7 +2699,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2716,7 +2715,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies
@@ -2825,7 +2824,7 @@ function logEvent(analyticsInstance, eventName, eventParams, options) {
 }
 
 const name = "@firebase/analytics";
-const version = "0.7.2";
+const version = "0.7.3";
 
 /**
  * Firebase Analytics

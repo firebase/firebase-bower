@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -145,14 +145,14 @@ function getModularInstance(service) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -164,24 +164,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 /**
  * @license
@@ -751,7 +750,7 @@ async function call(functionsInstance, name, data, options) {
 }
 
 const name = "@firebase/functions";
-const version = "0.7.3";
+const version = "0.7.4";
 
 /**
  * @license
@@ -806,7 +805,7 @@ function registerFunctions(fetchImpl, variant) {
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)

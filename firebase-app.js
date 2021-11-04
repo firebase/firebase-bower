@@ -1,95 +1,3 @@
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
-function __values(o) {
-    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-    if (m) return m.call(o);
-    if (o && typeof o.length === "number") return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-}
-
-function __read(o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-}
-
-function __spreadArray(to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-}
-
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -299,14 +207,14 @@ function isObject(thing) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -318,24 +226,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 /**
  * @license
@@ -353,7 +260,7 @@ var Component = /** @class */ (function () {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var DEFAULT_ENTRY_NAME$1 = '[DEFAULT]';
+const DEFAULT_ENTRY_NAME$1 = '[DEFAULT]';
 
 /**
  * @license
@@ -375,8 +282,8 @@ var DEFAULT_ENTRY_NAME$1 = '[DEFAULT]';
  * Provider for instance for service name T, e.g. 'auth', 'auth-internal'
  * NameServiceMapping[T] is an alias for the type of the instance
  */
-var Provider = /** @class */ (function () {
-    function Provider(name, container) {
+class Provider {
+    constructor(name, container) {
         this.name = name;
         this.container = container;
         this.component = null;
@@ -389,17 +296,17 @@ var Provider = /** @class */ (function () {
      * @param identifier A provider can provide mulitple instances of a service
      * if this.component.multipleInstances is true.
      */
-    Provider.prototype.get = function (identifier) {
+    get(identifier) {
         // if multipleInstances is not supported, use the default name
-        var normalizedIdentifier = this.normalizeInstanceIdentifier(identifier);
+        const normalizedIdentifier = this.normalizeInstanceIdentifier(identifier);
         if (!this.instancesDeferred.has(normalizedIdentifier)) {
-            var deferred = new Deferred();
+            const deferred = new Deferred();
             this.instancesDeferred.set(normalizedIdentifier, deferred);
             if (this.isInitialized(normalizedIdentifier) ||
                 this.shouldAutoInitialize()) {
                 // initialize the service if it can be auto-initialized
                 try {
-                    var instance = this.getOrInitializeService({
+                    const instance = this.getOrInitializeService({
                         instanceIdentifier: normalizedIdentifier
                     });
                     if (instance) {
@@ -413,12 +320,12 @@ var Provider = /** @class */ (function () {
             }
         }
         return this.instancesDeferred.get(normalizedIdentifier).promise;
-    };
-    Provider.prototype.getImmediate = function (options) {
+    }
+    getImmediate(options) {
         var _a;
         // if multipleInstances is not supported, use the default name
-        var normalizedIdentifier = this.normalizeInstanceIdentifier(options === null || options === void 0 ? void 0 : options.identifier);
-        var optional = (_a = options === null || options === void 0 ? void 0 : options.optional) !== null && _a !== void 0 ? _a : false;
+        const normalizedIdentifier = this.normalizeInstanceIdentifier(options === null || options === void 0 ? void 0 : options.identifier);
+        const optional = (_a = options === null || options === void 0 ? void 0 : options.optional) !== null && _a !== void 0 ? _a : false;
         if (this.isInitialized(normalizedIdentifier) ||
             this.shouldAutoInitialize()) {
             try {
@@ -441,20 +348,19 @@ var Provider = /** @class */ (function () {
                 return null;
             }
             else {
-                throw Error("Service " + this.name + " is not available");
+                throw Error(`Service ${this.name} is not available`);
             }
         }
-    };
-    Provider.prototype.getComponent = function () {
+    }
+    getComponent() {
         return this.component;
-    };
-    Provider.prototype.setComponent = function (component) {
-        var e_1, _a;
+    }
+    setComponent(component) {
         if (component.name !== this.name) {
-            throw Error("Mismatching Component " + component.name + " for Provider " + this.name + ".");
+            throw Error(`Mismatching Component ${component.name} for Provider ${this.name}.`);
         }
         if (this.component) {
-            throw Error("Component for " + this.name + " has already been provided");
+            throw Error(`Component for ${this.name} has already been provided`);
         }
         this.component = component;
         // return early without attempting to initialize the component if the component requires explicit initialization (calling `Provider.initialize()`)
@@ -473,108 +379,75 @@ var Provider = /** @class */ (function () {
                 // a fatal error in this case?
             }
         }
-        try {
-            // Create service instances for the pending promises and resolve them
-            // NOTE: if this.multipleInstances is false, only the default instance will be created
-            // and all promises with resolve with it regardless of the identifier.
-            for (var _b = __values(this.instancesDeferred.entries()), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var _d = __read(_c.value, 2), instanceIdentifier = _d[0], instanceDeferred = _d[1];
-                var normalizedIdentifier = this.normalizeInstanceIdentifier(instanceIdentifier);
-                try {
-                    // `getOrInitializeService()` should always return a valid instance since a component is guaranteed. use ! to make typescript happy.
-                    var instance = this.getOrInitializeService({
-                        instanceIdentifier: normalizedIdentifier
-                    });
-                    instanceDeferred.resolve(instance);
-                }
-                catch (e) {
-                    // when the instance factory throws an exception, it should not cause
-                    // a fatal error. We just leave the promise unresolved.
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
+        // Create service instances for the pending promises and resolve them
+        // NOTE: if this.multipleInstances is false, only the default instance will be created
+        // and all promises with resolve with it regardless of the identifier.
+        for (const [instanceIdentifier, instanceDeferred] of this.instancesDeferred.entries()) {
+            const normalizedIdentifier = this.normalizeInstanceIdentifier(instanceIdentifier);
             try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                // `getOrInitializeService()` should always return a valid instance since a component is guaranteed. use ! to make typescript happy.
+                const instance = this.getOrInitializeService({
+                    instanceIdentifier: normalizedIdentifier
+                });
+                instanceDeferred.resolve(instance);
             }
-            finally { if (e_1) throw e_1.error; }
+            catch (e) {
+                // when the instance factory throws an exception, it should not cause
+                // a fatal error. We just leave the promise unresolved.
+            }
         }
-    };
-    Provider.prototype.clearInstance = function (identifier) {
-        if (identifier === void 0) { identifier = DEFAULT_ENTRY_NAME$1; }
+    }
+    clearInstance(identifier = DEFAULT_ENTRY_NAME$1) {
         this.instancesDeferred.delete(identifier);
         this.instancesOptions.delete(identifier);
         this.instances.delete(identifier);
-    };
+    }
     // app.delete() will call this method on every provider to delete the services
     // TODO: should we mark the provider as deleted?
-    Provider.prototype.delete = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var services;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        services = Array.from(this.instances.values());
-                        return [4 /*yield*/, Promise.all(__spreadArray(__spreadArray([], __read(services
-                                .filter(function (service) { return 'INTERNAL' in service; }) // legacy services
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                .map(function (service) { return service.INTERNAL.delete(); }))), __read(services
-                                .filter(function (service) { return '_delete' in service; }) // modularized services
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                .map(function (service) { return service._delete(); }))))];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    Provider.prototype.isComponentSet = function () {
+    async delete() {
+        const services = Array.from(this.instances.values());
+        await Promise.all([
+            ...services
+                .filter(service => 'INTERNAL' in service) // legacy services
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .map(service => service.INTERNAL.delete()),
+            ...services
+                .filter(service => '_delete' in service) // modularized services
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .map(service => service._delete())
+        ]);
+    }
+    isComponentSet() {
         return this.component != null;
-    };
-    Provider.prototype.isInitialized = function (identifier) {
-        if (identifier === void 0) { identifier = DEFAULT_ENTRY_NAME$1; }
+    }
+    isInitialized(identifier = DEFAULT_ENTRY_NAME$1) {
         return this.instances.has(identifier);
-    };
-    Provider.prototype.getOptions = function (identifier) {
-        if (identifier === void 0) { identifier = DEFAULT_ENTRY_NAME$1; }
+    }
+    getOptions(identifier = DEFAULT_ENTRY_NAME$1) {
         return this.instancesOptions.get(identifier) || {};
-    };
-    Provider.prototype.initialize = function (opts) {
-        var e_2, _a;
-        if (opts === void 0) { opts = {}; }
-        var _b = opts.options, options = _b === void 0 ? {} : _b;
-        var normalizedIdentifier = this.normalizeInstanceIdentifier(opts.instanceIdentifier);
+    }
+    initialize(opts = {}) {
+        const { options = {} } = opts;
+        const normalizedIdentifier = this.normalizeInstanceIdentifier(opts.instanceIdentifier);
         if (this.isInitialized(normalizedIdentifier)) {
-            throw Error(this.name + "(" + normalizedIdentifier + ") has already been initialized");
+            throw Error(`${this.name}(${normalizedIdentifier}) has already been initialized`);
         }
         if (!this.isComponentSet()) {
-            throw Error("Component " + this.name + " has not been registered yet");
+            throw Error(`Component ${this.name} has not been registered yet`);
         }
-        var instance = this.getOrInitializeService({
+        const instance = this.getOrInitializeService({
             instanceIdentifier: normalizedIdentifier,
-            options: options
+            options
         });
-        try {
-            // resolve any pending promise waiting for the service instance
-            for (var _c = __values(this.instancesDeferred.entries()), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var _e = __read(_d.value, 2), instanceIdentifier = _e[0], instanceDeferred = _e[1];
-                var normalizedDeferredIdentifier = this.normalizeInstanceIdentifier(instanceIdentifier);
-                if (normalizedIdentifier === normalizedDeferredIdentifier) {
-                    instanceDeferred.resolve(instance);
-                }
+        // resolve any pending promise waiting for the service instance
+        for (const [instanceIdentifier, instanceDeferred] of this.instancesDeferred.entries()) {
+            const normalizedDeferredIdentifier = this.normalizeInstanceIdentifier(instanceIdentifier);
+            if (normalizedIdentifier === normalizedDeferredIdentifier) {
+                instanceDeferred.resolve(instance);
             }
-        }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-            }
-            finally { if (e_2) throw e_2.error; }
         }
         return instance;
-    };
+    }
     /**
      *
      * @param callback - a function that will be invoked  after the provider has been initialized by calling provider.initialize().
@@ -583,56 +456,44 @@ var Provider = /** @class */ (function () {
      * @param identifier An optional instance identifier
      * @returns a function to unregister the callback
      */
-    Provider.prototype.onInit = function (callback, identifier) {
+    onInit(callback, identifier) {
         var _a;
-        var normalizedIdentifier = this.normalizeInstanceIdentifier(identifier);
-        var existingCallbacks = (_a = this.onInitCallbacks.get(normalizedIdentifier)) !== null && _a !== void 0 ? _a : new Set();
+        const normalizedIdentifier = this.normalizeInstanceIdentifier(identifier);
+        const existingCallbacks = (_a = this.onInitCallbacks.get(normalizedIdentifier)) !== null && _a !== void 0 ? _a : new Set();
         existingCallbacks.add(callback);
         this.onInitCallbacks.set(normalizedIdentifier, existingCallbacks);
-        var existingInstance = this.instances.get(normalizedIdentifier);
+        const existingInstance = this.instances.get(normalizedIdentifier);
         if (existingInstance) {
             callback(existingInstance, normalizedIdentifier);
         }
-        return function () {
+        return () => {
             existingCallbacks.delete(callback);
         };
-    };
+    }
     /**
      * Invoke onInit callbacks synchronously
      * @param instance the service instance`
      */
-    Provider.prototype.invokeOnInitCallbacks = function (instance, identifier) {
-        var e_3, _a;
-        var callbacks = this.onInitCallbacks.get(identifier);
+    invokeOnInitCallbacks(instance, identifier) {
+        const callbacks = this.onInitCallbacks.get(identifier);
         if (!callbacks) {
             return;
         }
-        try {
-            for (var callbacks_1 = __values(callbacks), callbacks_1_1 = callbacks_1.next(); !callbacks_1_1.done; callbacks_1_1 = callbacks_1.next()) {
-                var callback = callbacks_1_1.value;
-                try {
-                    callback(instance, identifier);
-                }
-                catch (_b) {
-                    // ignore errors in the onInit callback
-                }
-            }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
+        for (const callback of callbacks) {
             try {
-                if (callbacks_1_1 && !callbacks_1_1.done && (_a = callbacks_1.return)) _a.call(callbacks_1);
+                callback(instance, identifier);
             }
-            finally { if (e_3) throw e_3.error; }
+            catch (_a) {
+                // ignore errors in the onInit callback
+            }
         }
-    };
-    Provider.prototype.getOrInitializeService = function (_a) {
-        var instanceIdentifier = _a.instanceIdentifier, _b = _a.options, options = _b === void 0 ? {} : _b;
-        var instance = this.instances.get(instanceIdentifier);
+    }
+    getOrInitializeService({ instanceIdentifier, options = {} }) {
+        let instance = this.instances.get(instanceIdentifier);
         if (!instance && this.component) {
             instance = this.component.instanceFactory(this.container, {
                 instanceIdentifier: normalizeIdentifierForFactory(instanceIdentifier),
-                options: options
+                options
             });
             this.instances.set(instanceIdentifier, instance);
             this.instancesOptions.set(instanceIdentifier, options);
@@ -651,28 +512,26 @@ var Provider = /** @class */ (function () {
                 try {
                     this.component.onInstanceCreated(this.container, instanceIdentifier, instance);
                 }
-                catch (_c) {
+                catch (_a) {
                     // ignore errors in the onInstanceCreatedCallback
                 }
             }
         }
         return instance || null;
-    };
-    Provider.prototype.normalizeInstanceIdentifier = function (identifier) {
-        if (identifier === void 0) { identifier = DEFAULT_ENTRY_NAME$1; }
+    }
+    normalizeInstanceIdentifier(identifier = DEFAULT_ENTRY_NAME$1) {
         if (this.component) {
             return this.component.multipleInstances ? identifier : DEFAULT_ENTRY_NAME$1;
         }
         else {
             return identifier; // assume multiple instances are supported before the component is provided.
         }
-    };
-    Provider.prototype.shouldAutoInitialize = function () {
+    }
+    shouldAutoInitialize() {
         return (!!this.component &&
             this.component.instantiationMode !== "EXPLICIT" /* EXPLICIT */);
-    };
-    return Provider;
-}());
+    }
+}
 // undefined should be passed to the service factory for the default instance
 function normalizeIdentifierForFactory(identifier) {
     return identifier === DEFAULT_ENTRY_NAME$1 ? undefined : identifier;
@@ -700,8 +559,8 @@ function isComponentEager(component) {
 /**
  * ComponentContainer that provides Providers for service name T, e.g. `auth`, `auth-internal`
  */
-var ComponentContainer = /** @class */ (function () {
-    function ComponentContainer(name) {
+class ComponentContainer {
+    constructor(name) {
         this.name = name;
         this.providers = new Map();
     }
@@ -714,21 +573,21 @@ var ComponentContainer = /** @class */ (function () {
      * for different tests.
      * if overwrite is false: throw an exception
      */
-    ComponentContainer.prototype.addComponent = function (component) {
-        var provider = this.getProvider(component.name);
+    addComponent(component) {
+        const provider = this.getProvider(component.name);
         if (provider.isComponentSet()) {
-            throw new Error("Component " + component.name + " has already been registered with " + this.name);
+            throw new Error(`Component ${component.name} has already been registered with ${this.name}`);
         }
         provider.setComponent(component);
-    };
-    ComponentContainer.prototype.addOrOverwriteComponent = function (component) {
-        var provider = this.getProvider(component.name);
+    }
+    addOrOverwriteComponent(component) {
+        const provider = this.getProvider(component.name);
         if (provider.isComponentSet()) {
             // delete the existing provider from the container, so we can register the new component
             this.providers.delete(component.name);
         }
         this.addComponent(component);
-    };
+    }
     /**
      * getProvider provides a type safe interface where it can only be called with a field name
      * present in NameServiceMapping interface.
@@ -736,20 +595,19 @@ var ComponentContainer = /** @class */ (function () {
      * Firebase SDKs providing services should extend NameServiceMapping interface to register
      * themselves.
      */
-    ComponentContainer.prototype.getProvider = function (name) {
+    getProvider(name) {
         if (this.providers.has(name)) {
             return this.providers.get(name);
         }
         // create a Provider for a service that hasn't registered with Firebase
-        var provider = new Provider(name, this);
+        const provider = new Provider(name, this);
         this.providers.set(name, provider);
         return provider;
-    };
-    ComponentContainer.prototype.getProviders = function () {
+    }
+    getProviders() {
         return Array.from(this.providers.values());
-    };
-    return ComponentContainer;
-}());
+    }
+}
 
 /**
  * @license
@@ -1021,8 +879,8 @@ function isVersionServiceProvider(provider) {
     return (component === null || component === void 0 ? void 0 : component.type) === "VERSION" /* VERSION */;
 }
 
-const name$o = "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-const version$1 = "0.7.5";
+const name$o = "https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js";
+const version$1 = "0.7.6";
 
 /**
  * @license
@@ -1040,17 +898,17 @@ const version$1 = "0.7.5";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js');
 
-const name$n = "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js-compat";
+const name$n = "https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js-compat";
 
 const name$m = "@firebase/analytics-compat";
 
 const name$l = "@firebase/analytics";
 
-const name$k = "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js-check-compat";
+const name$k = "https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js-check-compat";
 
-const name$j = "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js-check";
+const name$j = "https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js-check";
 
 const name$i = "@firebase/auth";
 
@@ -1089,7 +947,7 @@ const name$2 = "@firebase/firestore";
 const name$1 = "@firebase/firestore-compat";
 
 const name$p = "firebase";
-const version$2 = "9.2.0";
+const version$2 = "9.3.0";
 
 /**
  * @license
@@ -1390,7 +1248,7 @@ function initializeApp(options, rawConfig = {}) {
     return newApp;
 }
 /**
- * Retrieves a {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} instance.
+ * Retrieves a {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} instance.
  *
  * When called with no arguments, the default app is returned. When an app name
  * is provided, the app corresponding to that name is returned.
@@ -1556,7 +1414,7 @@ function registerCoreComponents(variant) {
 registerCoreComponents('');
 
 var name = "firebase";
-var version = "9.2.0";
+var version = "9.3.0";
 
 /**
  * @license

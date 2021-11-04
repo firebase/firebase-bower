@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -387,14 +387,14 @@ class Logger {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -406,24 +406,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 function toArray(arr) {
   return Array.prototype.slice.call(arr);
@@ -726,7 +725,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.2";
+const version$1 = "0.5.3";
 
 /**
  * @license
@@ -1691,7 +1690,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/performance";
-const version = "0.5.2";
+const version = "0.5.3";
 
 /**
  * @license
@@ -3115,7 +3114,7 @@ class PerformanceController {
 const DEFAULT_ENTRY_NAME = '[DEFAULT]';
 /**
  * Returns a {@link FirebasePerformance} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
  * @public
  */
 function getPerformance(app = getApp()) {
@@ -3126,7 +3125,7 @@ function getPerformance(app = getApp()) {
 }
 /**
  * Returns a {@link FirebasePerformance} instance for the given app. Can only be called once.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
  * @param settings - Optional settings for the {@link FirebasePerformance} instance.
  * @public
  */

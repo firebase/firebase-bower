@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -251,14 +251,14 @@ function getModularInstance(service) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -270,24 +270,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 /**
  * @license
@@ -746,7 +745,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.2";
+const version$1 = "0.5.3";
 
 /**
  * @license
@@ -1711,7 +1710,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/remote-config";
-const version = "0.3.1";
+const version = "0.3.2";
 
 /**
  * @license
@@ -1877,7 +1876,7 @@ class Value {
  */
 /**
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} instance.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} instance.
  * @returns A {@link RemoteConfig} instance.
  *
  * @public

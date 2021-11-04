@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
 
 /**
  * @license
@@ -1173,14 +1173,14 @@ function getModularInstance(service) {
 /**
  * Component for service name T, e.g. `auth`, `auth-internal`
  */
-var Component = /** @class */ (function () {
+class Component {
     /**
      *
      * @param name The public service name, e.g. app, auth, firestore, database
      * @param instanceFactory Service factory responsible for creating the public interface
      * @param type whether the service provided by the component is public or private
      */
-    function Component(name, instanceFactory, type) {
+    constructor(name, instanceFactory, type) {
         this.name = name;
         this.instanceFactory = instanceFactory;
         this.type = type;
@@ -1192,24 +1192,23 @@ var Component = /** @class */ (function () {
         this.instantiationMode = "LAZY" /* LAZY */;
         this.onInstanceCreated = null;
     }
-    Component.prototype.setInstantiationMode = function (mode) {
+    setInstantiationMode(mode) {
         this.instantiationMode = mode;
         return this;
-    };
-    Component.prototype.setMultipleInstances = function (multipleInstances) {
+    }
+    setMultipleInstances(multipleInstances) {
         this.multipleInstances = multipleInstances;
         return this;
-    };
-    Component.prototype.setServiceProps = function (props) {
+    }
+    setServiceProps(props) {
         this.serviceProps = props;
         return this;
-    };
-    Component.prototype.setInstanceCreatedCallback = function (callback) {
+    }
+    setInstanceCreatedCallback(callback) {
         this.onInstanceCreated = callback;
         return this;
-    };
-    return Component;
-}());
+    }
+}
 
 /**
  * @license
@@ -1368,7 +1367,7 @@ class Logger {
 }
 
 const name = "@firebase/database";
-const version = "0.12.2";
+const version = "0.12.3";
 
 /**
  * @license
@@ -14916,7 +14915,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -14954,11 +14953,11 @@ class Database {
 }
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.
