@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
 
 /**
  * @license
@@ -9740,7 +9740,8 @@ const IFRAME_ATTRIBUTES = {
         width: '1px',
         height: '1px'
     },
-    'aria-hidden': 'true'
+    'aria-hidden': 'true',
+    tabindex: '-1'
 };
 // Map from apiHost to endpoint ID for passing into iframe. In current SDK, apiHost can be set to
 // anything (not from a list of endpoints with IDs as in legacy), so this is the closest we can get.
@@ -10136,7 +10137,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.1";
+var version = "0.19.2";
 
 /**
  * @license
@@ -10302,7 +10303,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

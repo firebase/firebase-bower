@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
 
 /**
  * @license
@@ -539,7 +539,7 @@ function deleteDb(name) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.3";
+const version$1 = "0.5.4";
 
 /**
  * @license
@@ -2484,7 +2484,7 @@ async function messageEventListener(messaging, event) {
 }
 
 const name = "@firebase/messaging";
-const version = "0.9.3";
+const version = "0.9.4";
 
 /**
  * @license

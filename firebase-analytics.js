@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
 
 /**
  * @license
@@ -798,7 +798,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.3";
+const version$1 = "0.5.4";
 
 /**
  * @license
@@ -2699,7 +2699,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2715,7 +2715,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies
@@ -2824,7 +2824,7 @@ function logEvent(analyticsInstance, eventName, eventParams, options) {
 }
 
 const name = "@firebase/analytics";
-const version = "0.7.3";
+const version = "0.7.4";
 
 /**
  * Firebase Analytics

@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
 
 /**
  * @license
@@ -725,7 +725,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.3";
+const version$1 = "0.5.4";
 
 /**
  * @license
@@ -1690,7 +1690,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/performance";
-const version = "0.5.3";
+const version = "0.5.4";
 
 /**
  * @license
@@ -3114,7 +3114,7 @@ class PerformanceController {
 const DEFAULT_ENTRY_NAME = '[DEFAULT]';
 /**
  * Returns a {@link FirebasePerformance} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp} to use.
  * @public
  */
 function getPerformance(app = getApp()) {
@@ -3125,7 +3125,7 @@ function getPerformance(app = getApp()) {
 }
 /**
  * Returns a {@link FirebasePerformance} instance for the given app. Can only be called once.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.3.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp} to use.
  * @param settings - Optional settings for the {@link FirebasePerformance} instance.
  * @public
  */
