@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
 
 /**
  * @license
@@ -853,7 +853,9 @@ callback, timeout) {
     // Would type this as "number" but that doesn't work for Node so ¯\_(ツ)_/¯
     // TODO: find a way to exclude Node type definition for storage because storage only works in browser
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let timeoutId = null;
+    let retryTimeoutId = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let globalTimeoutId = null;
     let hitTimeout = false;
     let cancelState = 0;
     function canceled() {
@@ -867,21 +869,29 @@ callback, timeout) {
         }
     }
     function callWithDelay(millis) {
-        timeoutId = setTimeout(() => {
-            timeoutId = null;
+        retryTimeoutId = setTimeout(() => {
+            retryTimeoutId = null;
             f(handler, canceled());
         }, millis);
     }
+    function clearGlobalTimeout() {
+        if (globalTimeoutId) {
+            clearTimeout(globalTimeoutId);
+        }
+    }
     function handler(success, ...args) {
         if (triggeredCallback) {
+            clearGlobalTimeout();
             return;
         }
         if (success) {
+            clearGlobalTimeout();
             triggerCallback.call(null, success, ...args);
             return;
         }
         const mustStop = canceled() || hitTimeout;
         if (mustStop) {
+            clearGlobalTimeout();
             triggerCallback.call(null, success, ...args);
             return;
         }
@@ -905,14 +915,15 @@ callback, timeout) {
             return;
         }
         stopped = true;
+        clearGlobalTimeout();
         if (triggeredCallback) {
             return;
         }
-        if (timeoutId !== null) {
+        if (retryTimeoutId !== null) {
             if (!wasTimeout) {
                 cancelState = 2;
             }
-            clearTimeout(timeoutId);
+            clearTimeout(retryTimeoutId);
             callWithDelay(0);
         }
         else {
@@ -922,7 +933,7 @@ callback, timeout) {
         }
     }
     callWithDelay(0);
-    setTimeout(() => {
+    globalTimeoutId = setTimeout(() => {
         hitTimeout = true;
         stop(true);
     }, timeout);
@@ -3618,7 +3629,7 @@ class FirebaseStorageImpl {
 }
 
 const name = "@firebase/storage";
-const version = "0.8.6";
+const version = "0.8.7";
 
 /**
  * @license

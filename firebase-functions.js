@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
+import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
 
 /**
  * @license
@@ -575,11 +575,22 @@ const DEFAULT_REGION = 'us-central1';
  * @param millis Number of milliseconds to wait before rejecting.
  */
 function failAfter(millis) {
-    return new Promise((_, reject) => {
-        setTimeout(() => {
-            reject(new FunctionsError('deadline-exceeded', 'deadline-exceeded'));
-        }, millis);
-    });
+    // Node timers and browser timers are fundamentally incompatible, but we
+    // don't care about the value here
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let timer = null;
+    return {
+        promise: new Promise((_, reject) => {
+            timer = setTimeout(() => {
+                reject(new FunctionsError('deadline-exceeded', 'deadline-exceeded'));
+            }, millis);
+        }),
+        cancel: () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        }
+    };
 }
 /**
  * The main class for the Firebase Functions SDK.
@@ -717,11 +728,14 @@ async function call(functionsInstance, name, data, options) {
     }
     // Default timeout to 70s, but let the options override it.
     const timeout = options.timeout || 70000;
+    const failAfterHandle = failAfter(timeout);
     const response = await Promise.race([
         postJSON(url, body, headers, functionsInstance.fetchImpl),
-        failAfter(timeout),
+        failAfterHandle.promise,
         functionsInstance.cancelAllRequests
     ]);
+    // Always clear the failAfter timeout
+    failAfterHandle.cancel();
     // If service was deleted, interrupted response throws an error.
     if (!response) {
         throw new FunctionsError('cancelled', 'Firebase Functions instance was deleted.');
@@ -750,7 +764,7 @@ async function call(functionsInstance, name, data, options) {
 }
 
 const name = "@firebase/functions";
-const version = "0.7.5";
+const version = "0.7.6";
 
 /**
  * @license
@@ -805,7 +819,7 @@ function registerFunctions(fetchImpl, variant) {
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)

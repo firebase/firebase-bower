@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
 
 /**
  * @license
@@ -4697,7 +4697,7 @@ class OAuthProvider extends BaseOAuthProvider {
  *   // This is the signed-in user
  *   const user = result.user;
  *   // This gives you a Facebook Access Token.
- *   const credential = provider.credentialFromResult(auth, result);
+ *   const credential = FacebookAuthProvider.credentialFromResult(result);
  *   const token = credential.accessToken;
  * }
  * ```
@@ -4712,7 +4712,7 @@ class OAuthProvider extends BaseOAuthProvider {
  * // The signed-in user info.
  * const user = result.user;
  * // This gives you a Facebook Access Token.
- * const credential = provider.credentialFromResult(auth, result);
+ * const credential = FacebookAuthProvider.credentialFromResult(result);
  * const token = credential.accessToken;
  * ```
  *
@@ -4813,7 +4813,7 @@ FacebookAuthProvider.PROVIDER_ID = "facebook.com" /* FACEBOOK */;
  *   // This is the signed-in user
  *   const user = result.user;
  *   // This gives you a Google Access Token.
- *   const credential = provider.credentialFromResult(auth, result);
+ *   const credential = GoogleAuthProvider.credentialFromResult(result);
  *   const token = credential.accessToken;
  * }
  * ```
@@ -4829,7 +4829,7 @@ FacebookAuthProvider.PROVIDER_ID = "facebook.com" /* FACEBOOK */;
  * // The signed-in user info.
  * const user = result.user;
  * // This gives you a Google Access Token.
- * const credential = provider.credentialFromResult(auth, result);
+ * const credential = GoogleAuthProvider.credentialFromResult(result);
  * const token = credential.accessToken;
  * ```
  *
@@ -4938,7 +4938,7 @@ GoogleAuthProvider.PROVIDER_ID = "google.com" /* GOOGLE */;
  *   // This is the signed-in user
  *   const user = result.user;
  *   // This gives you a Github Access Token.
- *   const credential = provider.credentialFromResult(auth, result);
+ *   const credential = GithubAuthProvider.credentialFromResult(result);
  *   const token = credential.accessToken;
  * }
  * ```
@@ -4953,7 +4953,7 @@ GoogleAuthProvider.PROVIDER_ID = "google.com" /* GOOGLE */;
  * // The signed-in user info.
  * const user = result.user;
  * // This gives you a Github Access Token.
- * const credential = provider.credentialFromResult(auth, result);
+ * const credential = GithubAuthProvider.credentialFromResult(result);
  * const token = credential.accessToken;
  * ```
  * @public
@@ -5217,7 +5217,7 @@ class SAMLAuthProvider extends FederatedAuthProvider {
  *   // This is the signed-in user
  *   const user = result.user;
  *   // This gives you a Twitter Access Token and Secret.
- *   const credential = provider.credentialFromResult(auth, result);
+ *   const credential = TwitterAuthProvider.credentialFromResult(result);
  *   const token = credential.accessToken;
  *   const secret = credential.secret;
  * }
@@ -5232,7 +5232,7 @@ class SAMLAuthProvider extends FederatedAuthProvider {
  * // The signed-in user info.
  * const user = result.user;
  * // This gives you a Twitter Access Token and Secret.
- * const credential = provider.credentialFromResult(auth, result);
+ * const credential = TwitterAuthProvider.credentialFromResult(result);
  * const token = credential.accessToken;
  * const secret = credential.secret;
  * ```
@@ -10137,7 +10137,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.2";
+var version = "0.19.3";
 
 /**
  * @license
@@ -10303,7 +10303,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.4.0/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
