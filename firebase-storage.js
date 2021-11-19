@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js';
 
 /**
  * @license
@@ -1073,6 +1073,14 @@ var ErrorCode;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Handles network logic for all Storage Requests, including error reporting and
+ * retries with backoff.
+ *
+ * @param I - the type of the backend's network response.
+ * @param - O the output type used by the rest of the SDK. The conversion
+ * happens in the specified `callback_`.
+ */
 class NetworkRequest {
     constructor(url_, method_, headers_, body_, successCodes_, additionalRetryCodes_, callback_, errorCallback_, timeout_, progressCallback_, connectionFactory_) {
         this.url_ = url_;
@@ -1149,7 +1157,7 @@ class NetworkRequest {
             const connection = status.connection;
             if (status.wasSuccessCode) {
                 try {
-                    const result = this.callback_(connection, connection.getResponseText());
+                    const result = this.callback_(connection, connection.getResponse());
                     if (isJustDef(result)) {
                         resolve(result);
                     }
@@ -1164,7 +1172,7 @@ class NetworkRequest {
             else {
                 if (connection !== null) {
                     const err = unknown();
-                    err.serverResponse = connection.getResponseText();
+                    err.serverResponse = connection.getErrorText();
                     if (this.errorCallback_) {
                         reject(this.errorCallback_(connection, err));
                     }
@@ -1295,7 +1303,7 @@ function getBlobBuilder() {
  * @param args The values that will make up the resulting blob.
  * @return The blob.
  */
-function getBlob(...args) {
+function getBlob$1(...args) {
     const BlobBuilder = getBlobBuilder();
     if (BlobBuilder !== undefined) {
         const bb = new BlobBuilder();
@@ -1645,7 +1653,7 @@ class FbsBlob {
                     return val;
                 }
             });
-            return new FbsBlob(getBlob.apply(null, blobby));
+            return new FbsBlob(getBlob$1.apply(null, blobby));
         }
         else {
             const uint8Arrays = args.map((val) => {
@@ -1967,6 +1975,12 @@ function fromResponseString(service, bucket, resourceString) {
     return fromBackendResponse(service, bucket, resource);
 }
 
+/**
+ * Contains a fully specified request.
+ *
+ * @param I - the type of the backend's network response.
+ * @param O - the output response type used by the rest of the SDK.
+ */
 class RequestInfo {
     constructor(url, method, 
     /**
@@ -2050,7 +2064,7 @@ function sharedErrorHandler(location) {
             if (
             // This exact message string is the only consistent part of the
             // server's error response that identifies it as an App Check error.
-            xhr.getResponseText().includes('Firebase App Check token is invalid')) {
+            xhr.getErrorText().includes('Firebase App Check token is invalid')) {
                 newErr = unauthorizedApp();
             }
             else {
@@ -2120,6 +2134,19 @@ function list$2(service, location, delimiter, pageToken, maxResults) {
     const requestInfo = new RequestInfo(url, method, listHandler(service, location.bucket), timeout);
     requestInfo.urlParams = urlParams;
     requestInfo.errorHandler = sharedErrorHandler(location);
+    return requestInfo;
+}
+function getBytes$1(service, location, maxDownloadSizeBytes) {
+    const urlPart = location.fullServerUrl();
+    const url = makeUrl(urlPart, service.host, service._protocol) + '?alt=media';
+    const method = 'GET';
+    const timeout = service.maxOperationRetryTime;
+    const requestInfo = new RequestInfo(url, method, (_, data) => data, timeout);
+    requestInfo.errorHandler = objectErrorHandler(location);
+    if (maxDownloadSizeBytes !== undefined) {
+        requestInfo.headers['Range'] = `bytes=0-${maxDownloadSizeBytes}`;
+        requestInfo.successCodes = [200 /* OK */, 206 /* Partial Content */];
+    }
     return requestInfo;
 }
 function getDownloadUrl(service, location, mappings) {
@@ -2518,6 +2545,7 @@ class XhrConnection {
     constructor() {
         this.sent_ = false;
         this.xhr_ = new XMLHttpRequest();
+        this.initXhr();
         this.errorCode_ = ErrorCode.NO_ERROR;
         this.sendPromise_ = new Promise(resolve => {
             this.xhr_.addEventListener('abort', () => {
@@ -2571,11 +2599,17 @@ class XhrConnection {
             return -1;
         }
     }
-    getResponseText() {
+    getResponse() {
         if (!this.sent_) {
-            throw internalError('cannot .getResponseText() before sending');
+            throw internalError('cannot .getResponse() before sending');
         }
-        return this.xhr_.responseText;
+        return this.xhr_.response;
+    }
+    getErrorText() {
+        if (!this.sent_) {
+            throw internalError('cannot .getErrorText() before sending');
+        }
+        return this.xhr_.statusText;
     }
     /** Aborts the request. */
     abort() {
@@ -2595,8 +2629,29 @@ class XhrConnection {
         }
     }
 }
-function newConnection() {
-    return new XhrConnection();
+class XhrTextConnection extends XhrConnection {
+    initXhr() {
+        this.xhr_.responseType = 'text';
+    }
+}
+function newTextConnection() {
+    return new XhrTextConnection();
+}
+class XhrBytesConnection extends XhrConnection {
+    initXhr() {
+        this.xhr_.responseType = 'arraybuffer';
+    }
+}
+function newBytesConnection() {
+    return new XhrBytesConnection();
+}
+class XhrBlobConnection extends XhrConnection {
+    initXhr() {
+        this.xhr_.responseType = 'blob';
+    }
+}
+function newBlobConnection() {
+    return new XhrBlobConnection();
 }
 
 /**
@@ -2738,7 +2793,7 @@ class UploadTask {
     _createResumable() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = createResumableUpload(this._ref.storage, this._ref._location, this._mappings, this._blob, this._metadata);
-            const createRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
+            const createRequest = this._ref.storage._makeRequest(requestInfo, newTextConnection, authToken, appCheckToken);
             this._request = createRequest;
             createRequest.getPromise().then((url) => {
                 this._request = undefined;
@@ -2753,7 +2808,7 @@ class UploadTask {
         const url = this._uploadUrl;
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = getResumableUploadStatus(this._ref.storage, this._ref._location, url, this._blob);
-            const statusRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
+            const statusRequest = this._ref.storage._makeRequest(requestInfo, newTextConnection, authToken, appCheckToken);
             this._request = statusRequest;
             statusRequest.getPromise().then(status => {
                 status = status;
@@ -2782,7 +2837,7 @@ class UploadTask {
                 this._transition("error" /* ERROR */);
                 return;
             }
-            const uploadRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
+            const uploadRequest = this._ref.storage._makeRequest(requestInfo, newTextConnection, authToken, appCheckToken);
             this._request = uploadRequest;
             uploadRequest.getPromise().then((newStatus) => {
                 this._increaseMultiplier();
@@ -2808,7 +2863,7 @@ class UploadTask {
     _fetchMetadata() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = getMetadata$2(this._ref.storage, this._ref._location, this._mappings);
-            const metadataRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
+            const metadataRequest = this._ref.storage._makeRequest(requestInfo, newTextConnection, authToken, appCheckToken);
             this._request = metadataRequest;
             metadataRequest.getPromise().then(metadata => {
                 this._request = undefined;
@@ -2820,7 +2875,7 @@ class UploadTask {
     _oneShotUpload() {
         this._resolveToken((authToken, appCheckToken) => {
             const requestInfo = multipartUpload(this._ref.storage, this._ref._location, this._mappings, this._blob, this._metadata);
-            const multipartRequest = this._ref.storage._makeRequest(requestInfo, newConnection, authToken, appCheckToken);
+            const multipartRequest = this._ref.storage._makeRequest(requestInfo, newTextConnection, authToken, appCheckToken);
             this._request = multipartRequest;
             multipartRequest.getPromise().then(metadata => {
                 this._request = undefined;
@@ -3186,6 +3241,34 @@ class Reference {
     }
 }
 /**
+ * Download the bytes at the object's location.
+ * @returns A Promise containing the downloaded bytes.
+ */
+function getBytesInternal(ref, maxDownloadSizeBytes) {
+    ref._throwIfRoot('getBytes');
+    const requestInfo = getBytes$1(ref.storage, ref._location, maxDownloadSizeBytes);
+    return ref.storage
+        .makeRequestWithTokens(requestInfo, newBytesConnection)
+        .then(bytes => maxDownloadSizeBytes !== undefined
+        ? // GCS may not honor the Range header for small files
+            bytes.slice(0, maxDownloadSizeBytes)
+        : bytes);
+}
+/**
+ * Download the bytes at the object's location.
+ * @returns A Promise containing the downloaded blob.
+ */
+function getBlobInternal(ref, maxDownloadSizeBytes) {
+    ref._throwIfRoot('getBlob');
+    const requestInfo = getBytes$1(ref.storage, ref._location, maxDownloadSizeBytes);
+    return ref.storage
+        .makeRequestWithTokens(requestInfo, newBlobConnection)
+        .then(blob => maxDownloadSizeBytes !== undefined
+        ? // GCS may not honor the Range header for small files
+            blob.slice(0, maxDownloadSizeBytes)
+        : blob);
+}
+/**
  * Uploads data to this object's location.
  * The upload is not resumable.
  *
@@ -3198,7 +3281,7 @@ function uploadBytes$1(ref, data, metadata) {
     ref._throwIfRoot('uploadBytes');
     const requestInfo = multipartUpload(ref.storage, ref._location, getMappings(), new FbsBlob(data, true), metadata);
     return ref.storage
-        .makeRequestWithTokens(requestInfo, newConnection)
+        .makeRequestWithTokens(requestInfo, newTextConnection)
         .then(finalMetadata => {
         return {
             metadata: finalMetadata,
@@ -3315,7 +3398,7 @@ function list$1(ref, options) {
     const op = options || {};
     const requestInfo = list$2(ref.storage, ref._location, 
     /*delimiter= */ '/', op.pageToken, op.maxResults);
-    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
+    return ref.storage.makeRequestWithTokens(requestInfo, newTextConnection);
 }
 /**
  * A `Promise` that resolves with the metadata for this object. If this
@@ -3327,7 +3410,7 @@ function list$1(ref, options) {
 function getMetadata$1(ref) {
     ref._throwIfRoot('getMetadata');
     const requestInfo = getMetadata$2(ref.storage, ref._location, getMappings());
-    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
+    return ref.storage.makeRequestWithTokens(requestInfo, newTextConnection);
 }
 /**
  * Updates the metadata for this object.
@@ -3343,7 +3426,7 @@ function getMetadata$1(ref) {
 function updateMetadata$1(ref, metadata) {
     ref._throwIfRoot('updateMetadata');
     const requestInfo = updateMetadata$2(ref.storage, ref._location, metadata, getMappings());
-    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
+    return ref.storage.makeRequestWithTokens(requestInfo, newTextConnection);
 }
 /**
  * Returns the download URL for the given Reference.
@@ -3355,7 +3438,7 @@ function getDownloadURL$1(ref) {
     ref._throwIfRoot('getDownloadURL');
     const requestInfo = getDownloadUrl(ref.storage, ref._location, getMappings());
     return ref.storage
-        .makeRequestWithTokens(requestInfo, newConnection)
+        .makeRequestWithTokens(requestInfo, newTextConnection)
         .then(url => {
         if (url === null) {
             throw noDownloadURL();
@@ -3372,7 +3455,7 @@ function getDownloadURL$1(ref) {
 function deleteObject$1(ref) {
     ref._throwIfRoot('deleteObject');
     const requestInfo = deleteObject$2(ref.storage, ref._location);
-    return ref.storage.makeRequestWithTokens(requestInfo, newConnection);
+    return ref.storage.makeRequestWithTokens(requestInfo, newTextConnection);
 }
 /**
  * Returns reference for object obtained by appending `childPath` to `ref`.
@@ -3629,7 +3712,7 @@ class FirebaseStorageImpl {
 }
 
 const name = "@firebase/storage";
-const version = "0.8.7";
+const version = "0.9.0";
 
 /**
  * @license
@@ -3668,6 +3751,24 @@ const STORAGE_TYPE = 'storage';
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Downloads the data at the object's location. Returns an error if the object
+ * is not found.
+ *
+ * To use this functionality, you have to whitelist your app's origin in your
+ * Cloud Storage bucket. See also
+ * https://cloud.google.com/storage/docs/configuring-cors
+ *
+ * @public
+ * @param ref - StorageReference where data should be downloaded.
+ * @param maxDownloadSizeBytes - If set, the maximum allowed size in bytes to
+ * retrieve.
+ * @returns A Promise containing the object's bytes
+ */
+function getBytes(ref, maxDownloadSizeBytes) {
+    ref = getModularInstance(ref);
+    return getBytesInternal(ref, maxDownloadSizeBytes);
+}
 /**
  * Uploads data to this object's location.
  * The upload is not resumable.
@@ -3843,6 +3944,58 @@ function connectStorageEmulator(storage, host, port, options = {}) {
 }
 
 /**
+ * @license
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Downloads the data at the object's location. Returns an error if the object
+ * is not found.
+ *
+ * To use this functionality, you have to whitelist your app's origin in your
+ * Cloud Storage bucket. See also
+ * https://cloud.google.com/storage/docs/configuring-cors
+ *
+ * This API is not available in Node.
+ *
+ * @public
+ * @param ref - StorageReference where data should be downloaded.
+ * @param maxDownloadSizeBytes - If set, the maximum allowed size in bytes to
+ * retrieve.
+ * @returns A Promise that resolves with a Blob containing the object's bytes
+ */
+function getBlob(ref, maxDownloadSizeBytes) {
+    ref = getModularInstance(ref);
+    return getBlobInternal(ref, maxDownloadSizeBytes);
+}
+/**
+ * Downloads the data at the object's location. Raises an error event if the
+ * object is not found.
+ *
+ * This API is only available in Node.
+ *
+ * @public
+ * @param ref - StorageReference where data should be downloaded.
+ * @param maxDownloadSizeBytes - If set, the maximum allowed size in bytes to
+ * retrieve.
+ * @returns A stream with the object's data as bytes
+ */
+function getStream(ref, maxDownloadSizeBytes) {
+    throw new Error('getStream() is only supported by NodeJS builds');
+}
+
+/**
  * Cloud Storage for Firebase
  *
  * @packageDocumentation
@@ -3862,6 +4015,6 @@ function registerStorage() {
 }
 registerStorage();
 
-export { StringFormat, FbsBlob as _FbsBlob, Location as _Location, TaskEvent as _TaskEvent, TaskState as _TaskState, UploadTask as _UploadTask, dataFromString as _dataFromString, _getChild, invalidArgument as _invalidArgument, invalidRootOperation as _invalidRootOperation, connectStorageEmulator, deleteObject, getDownloadURL, getMetadata, getStorage, list, listAll, ref, updateMetadata, uploadBytes, uploadBytesResumable, uploadString };
+export { StringFormat, FbsBlob as _FbsBlob, Location as _Location, TaskEvent as _TaskEvent, TaskState as _TaskState, UploadTask as _UploadTask, dataFromString as _dataFromString, _getChild, invalidArgument as _invalidArgument, invalidRootOperation as _invalidRootOperation, connectStorageEmulator, deleteObject, getBlob, getBytes, getDownloadURL, getMetadata, getStorage, getStream, list, listAll, ref, updateMetadata, uploadBytes, uploadBytesResumable, uploadString };
 
 //# sourceMappingURL=firebase-storage.js.map

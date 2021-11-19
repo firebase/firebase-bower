@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
+import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js';
 
 /**
  * @license
@@ -819,7 +819,7 @@ function registerFunctions(fetchImpl, variant) {
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)

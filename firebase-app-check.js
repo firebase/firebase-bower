@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js';
 
 /**
  * @license
@@ -573,6 +573,71 @@ const issuedAtTime = function (token) {
 
 /**
  * @license
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * The amount of milliseconds to exponentially increase.
+ */
+const DEFAULT_INTERVAL_MILLIS = 1000;
+/**
+ * The factor to backoff by.
+ * Should be a number greater than 1.
+ */
+const DEFAULT_BACKOFF_FACTOR = 2;
+/**
+ * The maximum milliseconds to increase to.
+ *
+ * <p>Visible for testing
+ */
+const MAX_VALUE_MILLIS = 4 * 60 * 60 * 1000; // Four hours, like iOS and Android.
+/**
+ * The percentage of backoff time to randomize by.
+ * See
+ * http://go/safe-client-behavior#step-1-determine-the-appropriate-retry-interval-to-handle-spike-traffic
+ * for context.
+ *
+ * <p>Visible for testing
+ */
+const RANDOM_FACTOR = 0.5;
+/**
+ * Based on the backoff method from
+ * https://github.com/google/closure-library/blob/master/closure/goog/math/exponentialbackoff.js.
+ * Extracted here so we don't need to pass metadata and a stateful ExponentialBackoff object around.
+ */
+function calculateBackoffMillis(backoffCount, intervalMillis = DEFAULT_INTERVAL_MILLIS, backoffFactor = DEFAULT_BACKOFF_FACTOR) {
+    // Calculates an exponentially increasing value.
+    // Deviation: calculates value from count and a constant interval, so we only need to save value
+    // and count to restore state.
+    const currBaseValue = intervalMillis * Math.pow(backoffFactor, backoffCount);
+    // A random "fuzz" to avoid waves of retries.
+    // Deviation: randomFactor is required.
+    const randomWait = Math.round(
+    // A fraction of the backoff value to add/subtract.
+    // Deviation: changes multiplication order to improve readability.
+    RANDOM_FACTOR *
+        currBaseValue *
+        // A random float (rounded to int by Math.round above) in the range [-1, 1]. Determines
+        // if we add or subtract.
+        (Math.random() - 0.5) *
+        2);
+    // Limits backoff to max to avoid effectively permanent backoff.
+    return Math.min(MAX_VALUE_MILLIS, currBaseValue + randomWait);
+}
+
+/**
+ * @license
  * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -863,6 +928,10 @@ const TOKEN_REFRESH_TIME = {
      */
     RETRIAL_MAX_WAIT: 16 * 60 * 1000
 };
+/**
+ * One day in millis, for certain error code backoffs.
+ */
+const ONE_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * @license
@@ -1003,7 +1072,8 @@ const ERRORS = {
     ["storage-open" /* STORAGE_OPEN */]: 'Error thrown when opening storage. Original error: {$originalErrorMessage}.',
     ["storage-get" /* STORAGE_GET */]: 'Error thrown when reading from storage. Original error: {$originalErrorMessage}.',
     ["storage-set" /* STORAGE_WRITE */]: 'Error thrown when writing to storage. Original error: {$originalErrorMessage}.',
-    ["recaptcha-error" /* RECAPTCHA_ERROR */]: 'ReCAPTCHA error.'
+    ["recaptcha-error" /* RECAPTCHA_ERROR */]: 'ReCAPTCHA error.',
+    ["throttled" /* THROTTLED */]: `Requests throttled due to {$httpStatus} error. Attempts allowed again after {$time}`
 };
 const ERROR_FACTORY = new ErrorFactory('appCheck', 'AppCheck', ERRORS);
 
@@ -1045,6 +1115,28 @@ function uuidv4() {
         const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
     });
+}
+function getDurationString(durationInMillis) {
+    const totalSeconds = Math.round(durationInMillis / 1000);
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds - days * 3600 * 24) / 3600);
+    const minutes = Math.floor((totalSeconds - days * 3600 * 24 - hours * 3600) / 60);
+    const seconds = totalSeconds - days * 3600 * 24 - hours * 3600 - minutes * 60;
+    let result = '';
+    if (days) {
+        result += pad(days) + 'd:';
+    }
+    if (hours) {
+        result += pad(hours) + 'h:';
+    }
+    result += pad(minutes) + 'm:' + pad(seconds) + 's';
+    return result;
+}
+function pad(value) {
+    if (value === 0) {
+        return '00';
+    }
+    return value >= 10 ? value.toString() : '0' + value;
 }
 
 /**
@@ -1284,7 +1376,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js-check');
 
 /**
  * @license
@@ -1462,9 +1554,6 @@ async function getToken$2(appCheck, forceRefresh = false) {
         const cachedToken = await state.cachedTokenPromise;
         if (cachedToken && isValid(cachedToken)) {
             token = cachedToken;
-            setState(app, Object.assign(Object.assign({}, state), { token }));
-            // notify all listeners with the cached token
-            notifyTokenListeners(app, { token: token.token });
         }
     }
     // Return the cached token (from either memory or indexedDB) if it's valid
@@ -1473,13 +1562,25 @@ async function getToken$2(appCheck, forceRefresh = false) {
             token: token.token
         };
     }
+    // Only set to true if this `getToken()` call is making the actual
+    // REST call to the exchange endpoint, versus waiting for an already
+    // in-flight call (see debug and regular exchange endpoint paths below)
+    let shouldCallListeners = false;
     /**
      * DEBUG MODE
      * If debug mode is set, and there is no cached token, fetch a new App
      * Check token using the debug token, and return it directly.
      */
     if (isDebugMode()) {
-        const tokenFromDebugExchange = await exchangeToken(getExchangeDebugTokenRequest(app, await getDebugToken()), appCheck.platformLoggerProvider);
+        // Avoid making another call to the exchange endpoint if one is in flight.
+        if (!state.exchangeTokenPromise) {
+            state.exchangeTokenPromise = exchangeToken(getExchangeDebugTokenRequest(app, await getDebugToken()), appCheck.platformLoggerProvider).then(token => {
+                state.exchangeTokenPromise = undefined;
+                return token;
+            });
+            shouldCallListeners = true;
+        }
+        const tokenFromDebugExchange = await state.exchangeTokenPromise;
         // Write debug token to indexedDB.
         await writeTokenToStorage(app, tokenFromDebugExchange);
         // Write debug token to state.
@@ -1490,14 +1591,29 @@ async function getToken$2(appCheck, forceRefresh = false) {
      * request a new token
      */
     try {
-        // state.provider is populated in initializeAppCheck()
-        // ensureActivated() at the top of this function checks that
-        // initializeAppCheck() has been called.
-        token = await state.provider.getToken();
+        // Avoid making another call to the exchange endpoint if one is in flight.
+        if (!state.exchangeTokenPromise) {
+            // state.provider is populated in initializeAppCheck()
+            // ensureActivated() at the top of this function checks that
+            // initializeAppCheck() has been called.
+            state.exchangeTokenPromise = state.provider.getToken().then(token => {
+                state.exchangeTokenPromise = undefined;
+                return token;
+            });
+            shouldCallListeners = true;
+        }
+        token = await state.exchangeTokenPromise;
     }
     catch (e) {
-        // `getToken()` should never throw, but logging error text to console will aid debugging.
-        logger.error(e);
+        if (e.code === `appCheck/${"throttled" /* THROTTLED */}`) {
+            // Warn if throttled, but do not treat it as an error.
+            logger.warn(e.message);
+        }
+        else {
+            // `getToken()` should never throw, but logging error text to console will aid debugging.
+            logger.error(e);
+        }
+        // Always save error to be added to dummy token.
         error = e;
     }
     let interopTokenResult;
@@ -1515,7 +1631,9 @@ async function getToken$2(appCheck, forceRefresh = false) {
         setState(app, Object.assign(Object.assign({}, state), { token }));
         await writeTokenToStorage(app, token);
     }
-    notifyTokenListeners(app, interopTokenResult);
+    if (shouldCallListeners) {
+        notifyTokenListeners(app, interopTokenResult);
+    }
     return interopTokenResult;
 }
 function addTokenListener(appCheck, type, listener, onError) {
@@ -1526,44 +1644,31 @@ function addTokenListener(appCheck, type, listener, onError) {
         error: onError,
         type
     };
-    const newState = Object.assign(Object.assign({}, state), { tokenObservers: [...state.tokenObservers, tokenObserver] });
-    /**
-     * Invoke the listener with the valid token, then start the token refresher
-     */
-    if (!newState.tokenRefresher) {
-        const tokenRefresher = createTokenRefresher(appCheck);
-        newState.tokenRefresher = tokenRefresher;
-    }
-    // Create the refresher but don't start it if `isTokenAutoRefreshEnabled`
-    // is not true.
-    if (!newState.tokenRefresher.isRunning() && state.isTokenAutoRefreshEnabled) {
-        newState.tokenRefresher.start();
-    }
+    setState(app, Object.assign(Object.assign({}, state), { tokenObservers: [...state.tokenObservers, tokenObserver] }));
     // Invoke the listener async immediately if there is a valid token
     // in memory.
     if (state.token && isValid(state.token)) {
         const validToken = state.token;
         Promise.resolve()
-            .then(() => listener({ token: validToken.token }))
+            .then(() => {
+            listener({ token: validToken.token });
+            initTokenRefresher(appCheck);
+        })
             .catch(() => {
             /* we don't care about exceptions thrown in listeners */
         });
     }
-    else if (state.token == null) {
-        // Only check cache if there was no token. If the token was invalid,
-        // skip this and rely on exchange endpoint.
-        void state
-            .cachedTokenPromise // Storage token promise. Always populated in `activate()`.
-            .then(cachedToken => {
-            if (cachedToken && isValid(cachedToken)) {
-                listener({ token: cachedToken.token });
-            }
-        })
-            .catch(() => {
-            /** Ignore errors in listeners. */
-        });
-    }
-    setState(app, newState);
+    /**
+     * Wait for any cached token promise to resolve before starting the token
+     * refresher. The refresher checks to see if there is an existing token
+     * in state and calls the exchange endpoint if not. We should first let the
+     * IndexedDB check have a chance to populate state if it can.
+     *
+     * Listener call isn't needed here because cachedTokenPromise will call any
+     * listeners that exist when it resolves.
+     */
+    // state.cachedTokenPromise is always populated in `activate()`.
+    void state.cachedTokenPromise.then(() => initTokenRefresher(appCheck));
 }
 function removeTokenListener(app, listener) {
     const state = getState(app);
@@ -1574,6 +1679,23 @@ function removeTokenListener(app, listener) {
         state.tokenRefresher.stop();
     }
     setState(app, Object.assign(Object.assign({}, state), { tokenObservers: newObservers }));
+}
+/**
+ * Logic to create and start refresher as needed.
+ */
+function initTokenRefresher(appCheck) {
+    const { app } = appCheck;
+    const state = getState(app);
+    // Create the refresher but don't start it if `isTokenAutoRefreshEnabled`
+    // is not true.
+    let refresher = state.tokenRefresher;
+    if (!refresher) {
+        refresher = createTokenRefresher(appCheck);
+        setState(app, Object.assign(Object.assign({}, state), { tokenRefresher: refresher }));
+    }
+    if (!refresher.isRunning() && state.isTokenAutoRefreshEnabled) {
+        refresher.start();
+    }
 }
 function createTokenRefresher(appCheck) {
     const { app } = appCheck;
@@ -1596,7 +1718,6 @@ function createTokenRefresher(appCheck) {
             throw result.error;
         }
     }, () => {
-        // TODO: when should we retry?
         return true;
     }, () => {
         const state = getState(app);
@@ -1691,8 +1812,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js-check";
-const version = "0.5.1";
+const name = "https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js-check";
+const version = "0.5.2";
 
 /**
  * @license
@@ -1850,19 +1971,44 @@ class ReCaptchaV3Provider {
      */
     constructor(_siteKey) {
         this._siteKey = _siteKey;
+        /**
+         * Throttle requests on certain error codes to prevent too many retries
+         * in a short time.
+         */
+        this._throttleData = null;
     }
     /**
      * Returns an App Check token.
      * @internal
      */
     async getToken() {
+        var _a;
+        throwIfThrottled(this._throttleData);
         // Top-level `getToken()` has already checked that App Check is initialized
         // and therefore this._app and this._platformLoggerProvider are available.
         const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
             // reCaptcha.execute() throws null which is not very descriptive.
             throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
         });
-        return exchangeToken(getExchangeRecaptchaV3TokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+        let result;
+        try {
+            result = await exchangeToken(getExchangeRecaptchaV3TokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+        }
+        catch (e) {
+            if (e.code === "fetch-status-error" /* FETCH_STATUS_ERROR */) {
+                this._throttleData = setBackoff(Number((_a = e.customData) === null || _a === void 0 ? void 0 : _a.httpStatus), this._throttleData);
+                throw ERROR_FACTORY.create("throttled" /* THROTTLED */, {
+                    time: getDurationString(this._throttleData.allowRequestsAfter - Date.now()),
+                    httpStatus: this._throttleData.httpStatus
+                });
+            }
+            else {
+                throw e;
+            }
+        }
+        // If successful, clear throttle data.
+        this._throttleData = null;
+        return result;
     }
     /**
      * @internal
@@ -1899,19 +2045,44 @@ class ReCaptchaEnterpriseProvider {
      */
     constructor(_siteKey) {
         this._siteKey = _siteKey;
+        /**
+         * Throttle requests on certain error codes to prevent too many retries
+         * in a short time.
+         */
+        this._throttleData = null;
     }
     /**
      * Returns an App Check token.
      * @internal
      */
     async getToken() {
+        var _a;
+        throwIfThrottled(this._throttleData);
         // Top-level `getToken()` has already checked that App Check is initialized
         // and therefore this._app and this._platformLoggerProvider are available.
         const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
             // reCaptcha.execute() throws null which is not very descriptive.
             throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
         });
-        return exchangeToken(getExchangeRecaptchaEnterpriseTokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+        let result;
+        try {
+            result = await exchangeToken(getExchangeRecaptchaEnterpriseTokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+        }
+        catch (e) {
+            if (e.code === "fetch-status-error" /* FETCH_STATUS_ERROR */) {
+                this._throttleData = setBackoff(Number((_a = e.customData) === null || _a === void 0 ? void 0 : _a.httpStatus), this._throttleData);
+                throw ERROR_FACTORY.create("throttled" /* THROTTLED */, {
+                    time: getDurationString(this._throttleData.allowRequestsAfter - Date.now()),
+                    httpStatus: this._throttleData.httpStatus
+                });
+            }
+            else {
+                throw e;
+            }
+        }
+        // If successful, clear throttle data.
+        this._throttleData = null;
+        return result;
     }
     /**
      * @internal
@@ -1980,6 +2151,57 @@ class CustomProvider {
         }
     }
 }
+/**
+ * Set throttle data to block requests until after a certain time
+ * depending on the failed request's status code.
+ * @param httpStatus - Status code of failed request.
+ * @param throttleData - `ThrottleData` object containing previous throttle
+ * data state.
+ * @returns Data about current throttle state and expiration time.
+ */
+function setBackoff(httpStatus, throttleData) {
+    /**
+     * Block retries for 1 day for the following error codes:
+     *
+     * 404: Likely malformed URL.
+     *
+     * 403:
+     * - Attestation failed
+     * - Wrong API key
+     * - Project deleted
+     */
+    if (httpStatus === 404 || httpStatus === 403) {
+        return {
+            backoffCount: 1,
+            allowRequestsAfter: Date.now() + ONE_DAY,
+            httpStatus
+        };
+    }
+    else {
+        /**
+         * For all other error codes, the time when it is ok to retry again
+         * is based on exponential backoff.
+         */
+        const backoffCount = throttleData ? throttleData.backoffCount : 0;
+        const backoffMillis = calculateBackoffMillis(backoffCount, 1000, 2);
+        return {
+            backoffCount: backoffCount + 1,
+            allowRequestsAfter: Date.now() + backoffMillis,
+            httpStatus
+        };
+    }
+}
+function throwIfThrottled(throttleData) {
+    if (throttleData) {
+        if (Date.now() - throttleData.allowRequestsAfter <= 0) {
+            // If before, throw.
+            throw ERROR_FACTORY.create("throttled" /* THROTTLED */, {
+                time: getDurationString(throttleData.allowRequestsAfter - Date.now()),
+                httpStatus: throttleData.httpStatus
+            });
+        }
+    }
+}
 
 /**
  * @license
@@ -1999,7 +2221,7 @@ class CustomProvider {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */
@@ -2034,6 +2256,17 @@ function initializeAppCheck(app = getApp(), options) {
     }
     const appCheck = provider.initialize({ options });
     _activate(app, options.provider, options.isTokenAutoRefreshEnabled);
+    // If isTokenAutoRefreshEnabled is false, do not send any requests to the
+    // exchange endpoint without an explicit call from the user either directly
+    // or through another Firebase library (storage, functions, etc.)
+    if (getState(app).isTokenAutoRefreshEnabled) {
+        // Adding a listener will start the refresher and fetch a token if needed.
+        // This gets a token ready and prevents a delay when an internal library
+        // requests the token.
+        // Listener function does not need to do anything, its base functionality
+        // of calling getToken() already fetches token and writes it to memory/storage.
+        addTokenListener(appCheck, "INTERNAL" /* INTERNAL */, () => { });
+    }
     return appCheck;
 }
 /**
@@ -2053,6 +2286,8 @@ function _activate(app, provider, isTokenAutoRefreshEnabled) {
     newState.cachedTokenPromise = readTokenFromStorage(app).then(cachedToken => {
         if (cachedToken && isValid(cachedToken)) {
             setState(app, Object.assign(Object.assign({}, getState(app)), { token: cachedToken }));
+            // notify all listeners with the cached token
+            notifyTokenListeners(app, { token: cachedToken.token });
         }
         return cachedToken;
     });

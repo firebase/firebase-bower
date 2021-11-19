@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, _getProvider, getApp, _removeServiceInstance, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
+import { _registerComponent, registerVersion, _getProvider, getApp, _removeServiceInstance, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js';
 
 /**
  * @license
@@ -874,7 +874,7 @@ D.MOCK_USER = new D("mock-user");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-let C = "9.4.1";
+let C = "9.5.0";
 
 /**
  * @license
@@ -9225,10 +9225,10 @@ class tr {
             // Note: In theory, this should be scheduled on the AsyncQueue since it
             // accesses internal state. We execute this code directly during shutdown
             // to make sure it gets a chance to run.
-            this._n(), isSafari() && navigator.appVersion.match("Version/14") && 
-            // On Safari 14, we do not run any cleanup actions as it might trigger
-            // a bug that prevents Safari from re-opening IndexedDB during the
-            // next page load.
+            this._n(), isSafari() && navigator.appVersion.match(/Version\/1[45]/) && 
+            // On Safari 14 and 15, we do not run any cleanup actions as it might
+            // trigger a bug that prevents Safari from re-opening IndexedDB during
+            // the next page load.
             // See https://bugs.webkit.org/show_bug.cgi?id=226547
             this.Oe.enterRestrictedMode(/* purgeExistingTasks= */ !0), this.Oe.enqueueAndForget((() => this.shutdown()));
         }, this.window.addEventListener("pagehide", this.Ue));
@@ -15549,7 +15549,7 @@ class pa {
  */ (t));
     }
     /**
-     * The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} associated with this `Firestore` service
+     * The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} associated with this `Firestore` service
      * instance.
      */    get app() {
         if (!this._app) throw new j(K.FAILED_PRECONDITION, "Firestore was not initialized using the Firebase SDK. 'app' is not available");
@@ -16174,7 +16174,7 @@ class ka extends Ta {
  * {@link getFirestore}. If the custom settings are empty, this function is
  * equivalent to calling {@link getFirestore}.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} with which the {@link Firestore} instance will
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} with which the {@link Firestore} instance will
  * be associated.
  * @param settings - A settings object to configure the {@link Firestore} instance.
  * @returns A newly initialized {@link Firestore} instance.
@@ -16193,10 +16193,10 @@ class ka extends Ta {
 
 /**
  * Returns the existing {@link Firestore} instance that is associated with the
- * provided {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp}. If no instance exists, initializes a new
+ * provided {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp}. If no instance exists, initializes a new
  * instance with default settings.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} instance that the returned {@link Firestore}
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} instance that the returned {@link Firestore}
  * instance is associated with.
  * @returns The {@link Firestore} instance of the provided app.
  */ function Oa(e = getApp()) {
@@ -18586,9 +18586,9 @@ function ph(t, e) {
         return n = Object.assign({
             useFetchStreams: e
         }, n), i._setSettings(n), i;
-    }), "PUBLIC" /* PUBLIC */)), registerVersion(S, "3.3.0", t), 
+    }), "PUBLIC" /* PUBLIC */)), registerVersion(S, "3.3.1", t), 
     // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
-    registerVersion(S, "3.3.0", "esm2017");
+    registerVersion(S, "3.3.1", "esm2017");
 }();
 
 export { nh as AbstractUserDataWriter, Xa as Bytes, xa as CACHE_SIZE_UNLIMITED, Ra as CollectionReference, Ia as DocumentReference, Cu as DocumentSnapshot, Ja as FieldPath, Za as FieldValue, ka as Firestore, j as FirestoreError, tu as GeoPoint, Na as LoadBundleTask, Aa as Query, Fu as QueryConstraint, Nu as QueryDocumentSnapshot, xu as QuerySnapshot, Du as SnapshotMetadata, it as Timestamp, Ih as Transaction, rh as WriteBatch, ha as _DatabaseId, Pt as _DocumentKey, G as _EmptyCredentialsProvider, ft as _FieldPath, ga as _cast, U as _debugAssert, wt as _isBase64Available, F as _logWarn, da as _validateIsNotUsedTogether, gh as addDoc, vh as arrayRemove, Ph as arrayUnion, qa as clearIndexedDbPersistence, ba as collection, Pa as collectionGroup, Ea as connectFirestoreEmulator, mh as deleteDoc, Rh as deleteField, Qa as disableNetwork, va as doc, Ya as documentId, La as enableIndexedDbPersistence, Ba as enableMultiTabIndexedDbPersistence, ja as enableNetwork, Yu as endAt, Ju as endBefore, Fa as ensureFirestoreConfigured, Th as executeWrite, ch as getDoc, uh as getDocFromCache, hh as getDocFromServer, lh as getDocs, fh as getDocsFromCache, dh as getDocsFromServer, Oa as getFirestore, Vh as increment, $a as initializeFirestore, ju as limit, Qu as limitToLast, Ga as loadBundle, za as namedQuery, yh as onSnapshot, ph as onSnapshotsInSync, qu as orderBy, Mu as query, Sa as queryEqual, Va as refEqual, Ah as runTransaction, bh as serverTimestamp, wh as setDoc, k as setLogLevel, $u as snapshotEqual, zu as startAfter, Gu as startAt, Wa as terminate, _h as updateDoc, Ka as waitForPendingWrites, Bu as where, Sh as writeBatch };

@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js';
 
 /**
  * @license
@@ -14915,7 +14915,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -14953,11 +14953,11 @@ class Database {
 }
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.
