@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
 
 /**
  * @license
@@ -1932,7 +1932,7 @@ function _addTidIfNecessary(auth, request) {
     return request;
 }
 async function _performApiRequest(auth, method, path, request, customErrorMap = {}) {
-    return _performFetchWithErrorHandling(auth, customErrorMap, () => {
+    return _performFetchWithErrorHandling(auth, customErrorMap, async () => {
         let body = {};
         let params = {};
         if (request) {
@@ -1946,11 +1946,10 @@ async function _performApiRequest(auth, method, path, request, customErrorMap = 
             }
         }
         const query = querystring(Object.assign({ key: auth.config.apiKey }, params)).slice(1);
-        const headers = new (FetchProvider.headers())();
-        headers.set("Content-Type" /* CONTENT_TYPE */, 'application/json');
-        headers.set("X-Client-Version" /* X_CLIENT_VERSION */, auth._getSdkClientVersion());
+        const headers = await auth._getAdditionalHeaders();
+        headers["Content-Type" /* CONTENT_TYPE */] = 'application/json';
         if (auth.languageCode) {
-            headers.set("X-Firebase-Locale" /* X_FIREBASE_LOCALE */, auth.languageCode);
+            headers["X-Firebase-Locale" /* X_FIREBASE_LOCALE */] = auth.languageCode;
         }
         return FetchProvider.fetch()(_getFinalTarget(auth, auth.config.apiHost, path, query), Object.assign({ method,
             headers, referrerPolicy: 'no-referrer' }, body));
@@ -2468,19 +2467,18 @@ function extractProviderData(providers) {
  * limitations under the License.
  */
 async function requestStsToken(auth, refreshToken) {
-    const response = await _performFetchWithErrorHandling(auth, {}, () => {
+    const response = await _performFetchWithErrorHandling(auth, {}, async () => {
         const body = querystring({
             'grant_type': 'refresh_token',
             'refresh_token': refreshToken
         }).slice(1);
         const { tokenApiHost, apiKey } = auth.config;
         const url = _getFinalTarget(auth, tokenApiHost, "/v1/token" /* TOKEN */, `key=${apiKey}`);
+        const headers = await auth._getAdditionalHeaders();
+        headers["Content-Type" /* CONTENT_TYPE */] = 'application/x-www-form-urlencoded';
         return FetchProvider.fetch()(url, {
             method: "POST" /* POST */,
-            headers: {
-                'X-Client-Version': auth._getSdkClientVersion(),
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers,
             body
         });
     });
@@ -3203,7 +3201,11 @@ class AuthImpl {
             // Initialize the resolver early if necessary (only applicable to web:
             // this will cause the iframe to load immediately in certain cases)
             if ((_a = this._popupRedirectResolver) === null || _a === void 0 ? void 0 : _a._shouldInitProactively) {
-                await this._popupRedirectResolver._initialize(this);
+                // If this fails, don't halt auth loading
+                try {
+                    await this._popupRedirectResolver._initialize(this);
+                }
+                catch (e) { /* Ignore the error */ }
             }
             await this.initializeCurrentUser(popupRedirectResolver);
             this.lastNotifiedUid = ((_b = this.currentUser) === null || _b === void 0 ? void 0 : _b.uid) || null;
@@ -3519,8 +3521,15 @@ class AuthImpl {
     _getFrameworks() {
         return this.frameworks;
     }
-    _getSdkClientVersion() {
-        return this.clientVersion;
+    async _getAdditionalHeaders() {
+        // Additional headers on every request
+        const headers = {
+            ["X-Client-Version" /* X_CLIENT_VERSION */]: this.clientVersion,
+        };
+        if (this.app.options.appId) {
+            headers["X-Firebase-gmpid" /* X_FIREBASE_GMPID */] = this.app.options.appId;
+        }
+        return headers;
     }
 }
 /**
@@ -9700,7 +9709,7 @@ function loadGapi(auth) {
                 }
             };
             // Load GApi loader.
-            return _loadJS(`https://apis.google.com/js/api.js?onload=${cbName}`);
+            return _loadJS(`https://apis.google.com/js/api.js?onload=${cbName}`).catch(e => reject(e));
         }
     }).catch(error => {
         // Reset cached promise to allow for retrial.
@@ -10021,6 +10030,11 @@ class BrowserPopupRedirectResolver {
         }
         const promise = this.initAndGetManager(auth);
         this.eventManagers[key] = { promise };
+        // If the promise is rejected, the key should be removed so that the
+        // operation can be retried later.
+        promise.catch(() => {
+            delete this.eventManagers[key];
+        });
         return promise;
     }
     async initAndGetManager(auth) {
@@ -10137,7 +10151,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.3";
+var version = "0.19.4";
 
 /**
  * @license
@@ -10303,7 +10317,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
