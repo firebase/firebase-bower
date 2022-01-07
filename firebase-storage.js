@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
 
 /**
  * @license
@@ -414,10 +414,15 @@ const ERROR_NAME = 'FirebaseError';
 // Based on code from:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
 class FirebaseError extends Error {
-    constructor(code, message, customData) {
+    constructor(
+    /** The error code for this error. */
+    code, message, 
+    /** Custom data for this error. */
+    customData) {
         super(message);
         this.code = code;
         this.customData = customData;
+        /** The custom name for all FirebaseErrors. */
         this.name = ERROR_NAME;
         // Fix For ES5
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
@@ -559,6 +564,22 @@ const DEFAULT_MAX_OPERATION_RETRY_TIME = 2 * 60 * 1000;
  */
 const DEFAULT_MAX_UPLOAD_RETRY_TIME = 10 * 60 * 1000;
 
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  * An error returned by the Firebase Storage SDK.
  * @public
@@ -3712,7 +3733,7 @@ class FirebaseStorageImpl {
 }
 
 const name = "@firebase/storage";
-const version = "0.9.0";
+const version = "0.9.1";
 
 /**
  * @license

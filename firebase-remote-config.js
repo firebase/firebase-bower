@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
 
 /**
  * @license
@@ -118,10 +118,15 @@ const ERROR_NAME = 'FirebaseError';
 // Based on code from:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
 class FirebaseError extends Error {
-    constructor(code, message, customData) {
+    constructor(
+    /** The error code for this error. */
+    code, message, 
+    /** Custom data for this error. */
+    customData) {
         super(message);
         this.code = code;
         this.customData = customData;
+        /** The custom name for all FirebaseErrors. */
         this.name = ERROR_NAME;
         // Fix For ES5
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
@@ -745,7 +750,7 @@ function openDb(name, version, upgradeCallback) {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.4";
+const version$1 = "0.5.5";
 
 /**
  * @license
@@ -1710,7 +1715,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/remote-config";
-const version = "0.3.3";
+const version = "0.3.4";
 
 /**
  * @license
@@ -1876,7 +1881,7 @@ class Value {
  */
 /**
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js#FirebaseApp} instance.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js#FirebaseApp} instance.
  * @returns A {@link RemoteConfig} instance.
  *
  * @public

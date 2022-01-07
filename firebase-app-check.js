@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
 
 /**
  * @license
@@ -449,10 +449,15 @@ const ERROR_NAME = 'FirebaseError';
 // Based on code from:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
 class FirebaseError extends Error {
-    constructor(code, message, customData) {
+    constructor(
+    /** The error code for this error. */
+    code, message, 
+    /** Custom data for this error. */
+    customData) {
         super(message);
         this.code = code;
         this.customData = customData;
+        /** The custom name for all FirebaseErrors. */
         this.name = ERROR_NAME;
         // Fix For ES5
         // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
@@ -1376,7 +1381,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js-check');
 
 /**
  * @license
@@ -1812,8 +1817,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js-check";
-const version = "0.5.2";
+const name = "https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js-check";
+const version = "0.5.3";
 
 /**
  * @license
@@ -2221,7 +2226,7 @@ function throwIfThrottled(throttleData) {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */
