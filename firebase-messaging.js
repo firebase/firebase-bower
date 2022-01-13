@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js';
 
 /**
  * @license
@@ -2105,7 +2105,7 @@ function externalizePayload(internalPayload) {
         // eslint-disable-next-line camelcase
         collapseKey: internalPayload.collapse_key,
         // eslint-disable-next-line camelcase
-        messageId: internalPayload.fcm_message_id
+        messageId: internalPayload.fcmMessageId
     };
     propagateNotificationPayload(payload, internalPayload);
     propagateDataPayload(payload, internalPayload);
@@ -2489,7 +2489,7 @@ async function messageEventListener(messaging, event) {
 }
 
 const name = "@firebase/messaging";
-const version = "0.9.5";
+const version = "0.9.6";
 
 /**
  * @license

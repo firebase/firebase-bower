@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js';
 
 /**
  * @license
@@ -6047,7 +6047,7 @@ function signInWithEmailAndPassword(auth, email, password) {
  * await sendSignInLinkToEmail(auth, 'user@example.com', actionCodeSettings);
  * // Obtain emailLink from the user.
  * if(isSignInWithEmailLink(auth, emailLink)) {
- *   await signInWithEmailLink('user@example.com', 'user@example.com', emailLink);
+ *   await signInWithEmailLink(auth, 'user@example.com', emailLink);
  * }
  * ```
  *
@@ -6108,7 +6108,7 @@ function isSignInWithEmailLink(auth, emailLink) {
  * await sendSignInLinkToEmail(auth, 'user@example.com', actionCodeSettings);
  * // Obtain emailLink from the user.
  * if(isSignInWithEmailLink(auth, emailLink)) {
- *   await signInWithEmailLink('user@example.com', 'user@example.com', emailLink);
+ *   await signInWithEmailLink(auth, 'user@example.com', emailLink);
  * }
  * ```
  *
@@ -10322,7 +10322,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.2/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
