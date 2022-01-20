@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js';
 
 /**
  * @license
@@ -2032,7 +2032,7 @@ class NetworkTimeout {
         this.timer = null;
         this.promise = new Promise((_, reject) => {
             this.timer = setTimeout(() => {
-                return reject(_createError(this.auth, "timeout" /* TIMEOUT */));
+                return reject(_createError(this.auth, "network-request-failed" /* NETWORK_REQUEST_FAILED */));
             }, DEFAULT_API_TIMEOUT_MS.get());
         });
     }
@@ -10156,7 +10156,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.5";
+var version = "0.19.6";
 
 /**
  * @license
@@ -10322,7 +10322,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.3/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
