@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js';
 
 /**
  * @license
@@ -5751,18 +5751,18 @@ class MultiFactorInfoImpl {
     }
     static _fromServerResponse(auth, enrollment) {
         if ('phoneInfo' in enrollment) {
-            return PhoneMultiFactorInfo._fromServerResponse(auth, enrollment);
+            return PhoneMultiFactorInfoImpl._fromServerResponse(auth, enrollment);
         }
         return _fail(auth, "internal-error" /* INTERNAL_ERROR */);
     }
 }
-class PhoneMultiFactorInfo extends MultiFactorInfoImpl {
+class PhoneMultiFactorInfoImpl extends MultiFactorInfoImpl {
     constructor(response) {
         super("phone" /* PHONE */, response);
         this.phoneNumber = response.phoneInfo;
     }
     static _fromServerResponse(_auth, enrollment) {
-        return new PhoneMultiFactorInfo(enrollment);
+        return new PhoneMultiFactorInfoImpl(enrollment);
     }
 }
 
@@ -10156,7 +10156,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.6";
+var version = "0.19.7";
 
 /**
  * @license
@@ -10322,7 +10322,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.5/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
