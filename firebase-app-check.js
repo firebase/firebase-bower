@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js';
 
 /**
  * @license
@@ -1160,16 +1160,19 @@ function pad(value) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-async function exchangeToken({ url, body }, platformLoggerProvider) {
+async function exchangeToken({ url, body }, heartbeatServiceProvider) {
     const headers = {
         'Content-Type': 'application/json'
     };
-    // If platform logger exists, add the platform info string to the header.
-    const platformLogger = platformLoggerProvider.getImmediate({
+    // If heartbeat service exists, add heartbeat header string to the header.
+    const heartbeatService = heartbeatServiceProvider.getImmediate({
         optional: true
     });
-    if (platformLogger) {
-        headers['X-Firebase-Client'] = platformLogger.getPlatformInfoString();
+    if (heartbeatService) {
+        const heartbeatsHeader = await heartbeatService.getHeartbeatsHeader();
+        if (heartbeatsHeader) {
+            headers['X-Firebase-Client'] = heartbeatsHeader;
+        }
     }
     const options = {
         method: 'POST',
@@ -1381,7 +1384,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js-check');
 
 /**
  * @license
@@ -1579,7 +1582,7 @@ async function getToken$2(appCheck, forceRefresh = false) {
     if (isDebugMode()) {
         // Avoid making another call to the exchange endpoint if one is in flight.
         if (!state.exchangeTokenPromise) {
-            state.exchangeTokenPromise = exchangeToken(getExchangeDebugTokenRequest(app, await getDebugToken()), appCheck.platformLoggerProvider).then(token => {
+            state.exchangeTokenPromise = exchangeToken(getExchangeDebugTokenRequest(app, await getDebugToken()), appCheck.heartbeatServiceProvider).then(token => {
                 state.exchangeTokenPromise = undefined;
                 return token;
             });
@@ -1794,9 +1797,9 @@ function makeDummyTokenResult(error) {
  * AppCheck Service class.
  */
 class AppCheckService {
-    constructor(app, platformLoggerProvider) {
+    constructor(app, heartbeatServiceProvider) {
         this.app = app;
-        this.platformLoggerProvider = platformLoggerProvider;
+        this.heartbeatServiceProvider = heartbeatServiceProvider;
     }
     _delete() {
         const { tokenObservers } = getState(this.app);
@@ -1806,8 +1809,8 @@ class AppCheckService {
         return Promise.resolve();
     }
 }
-function factory(app, platformLoggerProvider) {
-    return new AppCheckService(app, platformLoggerProvider);
+function factory(app, heartbeatServiceProvider) {
+    return new AppCheckService(app, heartbeatServiceProvider);
 }
 function internalFactory(appCheck) {
     return {
@@ -1817,8 +1820,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js-check";
-const version = "0.5.3";
+const name = "https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js-check";
+const version = "0.5.4";
 
 /**
  * @license
@@ -1990,14 +1993,14 @@ class ReCaptchaV3Provider {
         var _a;
         throwIfThrottled(this._throttleData);
         // Top-level `getToken()` has already checked that App Check is initialized
-        // and therefore this._app and this._platformLoggerProvider are available.
+        // and therefore this._app and this._heartbeatServiceProvider are available.
         const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
             // reCaptcha.execute() throws null which is not very descriptive.
             throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
         });
         let result;
         try {
-            result = await exchangeToken(getExchangeRecaptchaV3TokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+            result = await exchangeToken(getExchangeRecaptchaV3TokenRequest(this._app, attestedClaimsToken), this._heartbeatServiceProvider);
         }
         catch (e) {
             if (e.code === "fetch-status-error" /* FETCH_STATUS_ERROR */) {
@@ -2020,7 +2023,7 @@ class ReCaptchaV3Provider {
      */
     initialize(app) {
         this._app = app;
-        this._platformLoggerProvider = _getProvider(app, 'platform-logger');
+        this._heartbeatServiceProvider = _getProvider(app, 'heartbeat');
         initializeV3(app, this._siteKey).catch(() => {
             /* we don't care about the initialization result */
         });
@@ -2064,14 +2067,14 @@ class ReCaptchaEnterpriseProvider {
         var _a;
         throwIfThrottled(this._throttleData);
         // Top-level `getToken()` has already checked that App Check is initialized
-        // and therefore this._app and this._platformLoggerProvider are available.
+        // and therefore this._app and this._heartbeatServiceProvider are available.
         const attestedClaimsToken = await getToken$1(this._app).catch(_e => {
             // reCaptcha.execute() throws null which is not very descriptive.
             throw ERROR_FACTORY.create("recaptcha-error" /* RECAPTCHA_ERROR */);
         });
         let result;
         try {
-            result = await exchangeToken(getExchangeRecaptchaEnterpriseTokenRequest(this._app, attestedClaimsToken), this._platformLoggerProvider);
+            result = await exchangeToken(getExchangeRecaptchaEnterpriseTokenRequest(this._app, attestedClaimsToken), this._heartbeatServiceProvider);
         }
         catch (e) {
             if (e.code === "fetch-status-error" /* FETCH_STATUS_ERROR */) {
@@ -2094,7 +2097,7 @@ class ReCaptchaEnterpriseProvider {
      */
     initialize(app) {
         this._app = app;
-        this._platformLoggerProvider = _getProvider(app, 'platform-logger');
+        this._heartbeatServiceProvider = _getProvider(app, 'heartbeat');
         initializeEnterprise(app, this._siteKey).catch(() => {
             /* we don't care about the initialization result */
         });
@@ -2226,7 +2229,7 @@ function throwIfThrottled(throttleData) {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */
@@ -2390,8 +2393,8 @@ function registerAppCheck() {
     _registerComponent(new Component(APP_CHECK_NAME, container => {
         // getImmediate for FirebaseApp will always succeed
         const app = container.getProvider('app').getImmediate();
-        const platformLoggerProvider = container.getProvider('platform-logger');
-        return factory(app, platformLoggerProvider);
+        const heartbeatServiceProvider = container.getProvider('heartbeat');
+        return factory(app, heartbeatServiceProvider);
     }, "PUBLIC" /* PUBLIC */)
         .setInstantiationMode("EXPLICIT" /* EXPLICIT */)
         /**

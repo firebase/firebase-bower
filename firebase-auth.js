@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js';
 
 /**
  * @license
@@ -3156,8 +3156,9 @@ function _getClientVersion(clientPlatform, frameworks = []) {
  * limitations under the License.
  */
 class AuthImpl {
-    constructor(app, config) {
+    constructor(app, heartbeatServiceProvider, config) {
         this.app = app;
+        this.heartbeatServiceProvider = heartbeatServiceProvider;
         this.config = config;
         this.currentUser = null;
         this.emulatorConfig = null;
@@ -3524,12 +3525,20 @@ class AuthImpl {
         return this.frameworks;
     }
     async _getAdditionalHeaders() {
+        var _a;
         // Additional headers on every request
         const headers = {
             ["X-Client-Version" /* X_CLIENT_VERSION */]: this.clientVersion,
         };
         if (this.app.options.appId) {
             headers["X-Firebase-gmpid" /* X_FIREBASE_GMPID */] = this.app.options.appId;
+        }
+        // If the heartbeat service exists, add the heartbeat string
+        const heartbeatsHeader = await ((_a = this.heartbeatServiceProvider.getImmediate({
+            optional: true,
+        })) === null || _a === void 0 ? void 0 : _a.getHeartbeatsHeader());
+        if (heartbeatsHeader) {
+            headers["X-Firebase-Client" /* X_FIREBASE_CLIENT */] = heartbeatsHeader;
         }
         return headers;
     }
@@ -10153,7 +10162,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.9";
+var version = "0.19.10";
 
 /**
  * @license
@@ -10259,8 +10268,9 @@ function getVersionForPlatform(clientPlatform) {
 function registerAuth(clientPlatform) {
     _registerComponent(new Component("auth" /* AUTH */, (container, { options: deps }) => {
         const app = container.getProvider('app').getImmediate();
+        const heartbeatServiceProvider = container.getProvider('heartbeat');
         const { apiKey, authDomain } = app.options;
-        return (app => {
+        return ((app, heartbeatServiceProvider) => {
             _assert(apiKey && !apiKey.includes(':'), "invalid-api-key" /* INVALID_API_KEY */, { appName: app.name });
             // Auth domain is optional if IdP sign in isn't being used
             _assert(!(authDomain === null || authDomain === void 0 ? void 0 : authDomain.includes(':')), "argument-error" /* ARGUMENT_ERROR */, {
@@ -10275,10 +10285,10 @@ function registerAuth(clientPlatform) {
                 apiScheme: "https" /* API_SCHEME */,
                 sdkClientVersion: _getClientVersion(clientPlatform)
             };
-            const authInstance = new AuthImpl(app, config);
+            const authInstance = new AuthImpl(app, heartbeatServiceProvider, config);
             _initializeAuthInstance(authInstance, deps);
             return authInstance;
-        })(app);
+        })(app, heartbeatServiceProvider);
     }, "PUBLIC" /* PUBLIC */)
         /**
          * Auth can only be initialized by explicitly calling getAuth() or initializeAuth()
@@ -10319,7 +10329,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.

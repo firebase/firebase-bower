@@ -297,6 +297,14 @@ const base64Encode = function (str) {
     const utf8Bytes = stringToByteArray$1(str);
     return base64.encodeByteArray(utf8Bytes, true);
 };
+/**
+ * URL-safe base64 encoding (without "." padding in the end).
+ * e.g. Used in JSON Web Token (JWT) parts.
+ */
+const base64urlEncodeWithoutPadding = function (str) {
+    // Use base64url encoding and remove padding in the end (dot characters).
+    return base64Encode(str).replace(/\./g, '');
+};
 
 /**
  * @license
@@ -531,6 +539,124 @@ function deepEqual(a, b) {
 }
 function isObject(thing) {
     return thing !== null && typeof thing === 'object';
+}
+
+/**
+ * @license
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function promisifyRequest(request, errorMessage) {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = event => {
+            resolve(event.target.result);
+        };
+        request.onerror = event => {
+            var _a;
+            reject(`${errorMessage}: ${(_a = event.target.error) === null || _a === void 0 ? void 0 : _a.message}`);
+        };
+    });
+}
+class DBWrapper {
+    constructor(_db) {
+        this._db = _db;
+        this.objectStoreNames = this._db.objectStoreNames;
+    }
+    transaction(storeNames, mode) {
+        return new TransactionWrapper(this._db.transaction.call(this._db, storeNames, mode));
+    }
+    createObjectStore(storeName, options) {
+        return new ObjectStoreWrapper(this._db.createObjectStore(storeName, options));
+    }
+    close() {
+        this._db.close();
+    }
+}
+class TransactionWrapper {
+    constructor(_transaction) {
+        this._transaction = _transaction;
+        this.complete = new Promise((resolve, reject) => {
+            this._transaction.oncomplete = function () {
+                resolve();
+            };
+            this._transaction.onerror = () => {
+                reject(this._transaction.error);
+            };
+            this._transaction.onabort = () => {
+                reject(this._transaction.error);
+            };
+        });
+    }
+    objectStore(storeName) {
+        return new ObjectStoreWrapper(this._transaction.objectStore(storeName));
+    }
+}
+class ObjectStoreWrapper {
+    constructor(_store) {
+        this._store = _store;
+    }
+    index(name) {
+        return new IndexWrapper(this._store.index(name));
+    }
+    createIndex(name, keypath, options) {
+        return new IndexWrapper(this._store.createIndex(name, keypath, options));
+    }
+    get(key) {
+        const request = this._store.get(key);
+        return promisifyRequest(request, 'Error reading from IndexedDB');
+    }
+    put(value, key) {
+        const request = this._store.put(value, key);
+        return promisifyRequest(request, 'Error writing to IndexedDB');
+    }
+    delete(key) {
+        const request = this._store.delete(key);
+        return promisifyRequest(request, 'Error deleting from IndexedDB');
+    }
+    clear() {
+        const request = this._store.clear();
+        return promisifyRequest(request, 'Error clearing IndexedDB object store');
+    }
+}
+class IndexWrapper {
+    constructor(_index) {
+        this._index = _index;
+    }
+    get(key) {
+        const request = this._index.get(key);
+        return promisifyRequest(request, 'Error reading from IndexedDB');
+    }
+}
+function openDB(dbName, dbVersion, upgradeCallback) {
+    return new Promise((resolve, reject) => {
+        try {
+            const request = indexedDB.open(dbName, dbVersion);
+            request.onsuccess = event => {
+                resolve(new DBWrapper(event.target.result));
+            };
+            request.onerror = event => {
+                var _a;
+                reject(`Error opening indexedDB: ${(_a = event.target.error) === null || _a === void 0 ? void 0 : _a.message}`);
+            };
+            request.onupgradeneeded = event => {
+                upgradeCallback(new DBWrapper(request.result), event.oldVersion, event.newVersion, new TransactionWrapper(request.transaction));
+            };
+        }
+        catch (e) {
+            reject(`Error opening indexedDB: ${e.message}`);
+        }
+    });
 }
 
 /**
@@ -1155,306 +1281,6 @@ function setUserLogHandler(logCallback, options) {
     }
 }
 
-function toArray(arr) {
-  return Array.prototype.slice.call(arr);
-}
-
-function promisifyRequest(request) {
-  return new Promise(function(resolve, reject) {
-    request.onsuccess = function() {
-      resolve(request.result);
-    };
-
-    request.onerror = function() {
-      reject(request.error);
-    };
-  });
-}
-
-function promisifyRequestCall(obj, method, args) {
-  var request;
-  var p = new Promise(function(resolve, reject) {
-    request = obj[method].apply(obj, args);
-    promisifyRequest(request).then(resolve, reject);
-  });
-
-  p.request = request;
-  return p;
-}
-
-function promisifyCursorRequestCall(obj, method, args) {
-  var p = promisifyRequestCall(obj, method, args);
-  return p.then(function(value) {
-    if (!value) return;
-    return new Cursor(value, p.request);
-  });
-}
-
-function proxyProperties(ProxyClass, targetProp, properties) {
-  properties.forEach(function(prop) {
-    Object.defineProperty(ProxyClass.prototype, prop, {
-      get: function() {
-        return this[targetProp][prop];
-      },
-      set: function(val) {
-        this[targetProp][prop] = val;
-      }
-    });
-  });
-}
-
-function proxyRequestMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return promisifyRequestCall(this[targetProp], prop, arguments);
-    };
-  });
-}
-
-function proxyMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return this[targetProp][prop].apply(this[targetProp], arguments);
-    };
-  });
-}
-
-function proxyCursorRequestMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return promisifyCursorRequestCall(this[targetProp], prop, arguments);
-    };
-  });
-}
-
-function Index(index) {
-  this._index = index;
-}
-
-proxyProperties(Index, '_index', [
-  'name',
-  'keyPath',
-  'multiEntry',
-  'unique'
-]);
-
-proxyRequestMethods(Index, '_index', IDBIndex, [
-  'get',
-  'getKey',
-  'getAll',
-  'getAllKeys',
-  'count'
-]);
-
-proxyCursorRequestMethods(Index, '_index', IDBIndex, [
-  'openCursor',
-  'openKeyCursor'
-]);
-
-function Cursor(cursor, request) {
-  this._cursor = cursor;
-  this._request = request;
-}
-
-proxyProperties(Cursor, '_cursor', [
-  'direction',
-  'key',
-  'primaryKey',
-  'value'
-]);
-
-proxyRequestMethods(Cursor, '_cursor', IDBCursor, [
-  'update',
-  'delete'
-]);
-
-// proxy 'next' methods
-['advance', 'continue', 'continuePrimaryKey'].forEach(function(methodName) {
-  if (!(methodName in IDBCursor.prototype)) return;
-  Cursor.prototype[methodName] = function() {
-    var cursor = this;
-    var args = arguments;
-    return Promise.resolve().then(function() {
-      cursor._cursor[methodName].apply(cursor._cursor, args);
-      return promisifyRequest(cursor._request).then(function(value) {
-        if (!value) return;
-        return new Cursor(value, cursor._request);
-      });
-    });
-  };
-});
-
-function ObjectStore(store) {
-  this._store = store;
-}
-
-ObjectStore.prototype.createIndex = function() {
-  return new Index(this._store.createIndex.apply(this._store, arguments));
-};
-
-ObjectStore.prototype.index = function() {
-  return new Index(this._store.index.apply(this._store, arguments));
-};
-
-proxyProperties(ObjectStore, '_store', [
-  'name',
-  'keyPath',
-  'indexNames',
-  'autoIncrement'
-]);
-
-proxyRequestMethods(ObjectStore, '_store', IDBObjectStore, [
-  'put',
-  'add',
-  'delete',
-  'clear',
-  'get',
-  'getAll',
-  'getKey',
-  'getAllKeys',
-  'count'
-]);
-
-proxyCursorRequestMethods(ObjectStore, '_store', IDBObjectStore, [
-  'openCursor',
-  'openKeyCursor'
-]);
-
-proxyMethods(ObjectStore, '_store', IDBObjectStore, [
-  'deleteIndex'
-]);
-
-function Transaction(idbTransaction) {
-  this._tx = idbTransaction;
-  this.complete = new Promise(function(resolve, reject) {
-    idbTransaction.oncomplete = function() {
-      resolve();
-    };
-    idbTransaction.onerror = function() {
-      reject(idbTransaction.error);
-    };
-    idbTransaction.onabort = function() {
-      reject(idbTransaction.error);
-    };
-  });
-}
-
-Transaction.prototype.objectStore = function() {
-  return new ObjectStore(this._tx.objectStore.apply(this._tx, arguments));
-};
-
-proxyProperties(Transaction, '_tx', [
-  'objectStoreNames',
-  'mode'
-]);
-
-proxyMethods(Transaction, '_tx', IDBTransaction, [
-  'abort'
-]);
-
-function UpgradeDB(db, oldVersion, transaction) {
-  this._db = db;
-  this.oldVersion = oldVersion;
-  this.transaction = new Transaction(transaction);
-}
-
-UpgradeDB.prototype.createObjectStore = function() {
-  return new ObjectStore(this._db.createObjectStore.apply(this._db, arguments));
-};
-
-proxyProperties(UpgradeDB, '_db', [
-  'name',
-  'version',
-  'objectStoreNames'
-]);
-
-proxyMethods(UpgradeDB, '_db', IDBDatabase, [
-  'deleteObjectStore',
-  'close'
-]);
-
-function DB(db) {
-  this._db = db;
-}
-
-DB.prototype.transaction = function() {
-  return new Transaction(this._db.transaction.apply(this._db, arguments));
-};
-
-proxyProperties(DB, '_db', [
-  'name',
-  'version',
-  'objectStoreNames'
-]);
-
-proxyMethods(DB, '_db', IDBDatabase, [
-  'close'
-]);
-
-// Add cursor iterators
-// TODO: remove this once browsers do the right thing with promises
-['openCursor', 'openKeyCursor'].forEach(function(funcName) {
-  [ObjectStore, Index].forEach(function(Constructor) {
-    // Don't create iterateKeyCursor if openKeyCursor doesn't exist.
-    if (!(funcName in Constructor.prototype)) return;
-
-    Constructor.prototype[funcName.replace('open', 'iterate')] = function() {
-      var args = toArray(arguments);
-      var callback = args[args.length - 1];
-      var nativeObject = this._store || this._index;
-      var request = nativeObject[funcName].apply(nativeObject, args.slice(0, -1));
-      request.onsuccess = function() {
-        callback(request.result);
-      };
-    };
-  });
-});
-
-// polyfill getAll
-[Index, ObjectStore].forEach(function(Constructor) {
-  if (Constructor.prototype.getAll) return;
-  Constructor.prototype.getAll = function(query, count) {
-    var instance = this;
-    var items = [];
-
-    return new Promise(function(resolve) {
-      instance.iterateCursor(query, function(cursor) {
-        if (!cursor) {
-          resolve(items);
-          return;
-        }
-        items.push(cursor.value);
-
-        if (count !== undefined && items.length == count) {
-          resolve(items);
-          return;
-        }
-        cursor.continue();
-      });
-    });
-  };
-});
-
-function openDb(name, version, upgradeCallback) {
-  var p = promisifyRequestCall(indexedDB, 'open', [name, version]);
-  var request = p.request;
-
-  if (request) {
-    request.onupgradeneeded = function(event) {
-      if (upgradeCallback) {
-        upgradeCallback(new UpgradeDB(request.result, event.oldVersion, request.transaction));
-      }
-    };
-  }
-
-  return p.then(function(db) {
-    return new DB(db);
-  });
-}
-
 /**
  * @license
  * Copyright 2019 Google LLC
@@ -1508,8 +1334,8 @@ function isVersionServiceProvider(provider) {
     return (component === null || component === void 0 ? void 0 : component.type) === "VERSION" /* VERSION */;
 }
 
-const name$o = "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js";
-const version$1 = "0.7.18";
+const name$o = "https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js";
+const version$1 = "0.7.19";
 
 /**
  * @license
@@ -1527,17 +1353,17 @@ const version$1 = "0.7.18";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js');
 
-const name$n = "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js-compat";
+const name$n = "https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js-compat";
 
 const name$m = "@firebase/analytics-compat";
 
 const name$l = "@firebase/analytics";
 
-const name$k = "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js-check-compat";
+const name$k = "https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js-check-compat";
 
-const name$j = "https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js-check";
+const name$j = "https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js-check";
 
 const name$i = "@firebase/auth";
 
@@ -1576,7 +1402,7 @@ const name$2 = "@firebase/firestore";
 const name$1 = "@firebase/firestore-compat";
 
 const name$p = "firebase";
-const version$2 = "9.6.8";
+const version$2 = "9.6.9";
 
 /**
  * @license
@@ -1887,7 +1713,7 @@ function initializeApp(options, rawConfig = {}) {
     return newApp;
 }
 /**
- * Retrieves a {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} instance.
+ * Retrieves a {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} instance.
  *
  * When called with no arguments, the default app is returned. When an app name
  * is provided, the app corresponding to that name is returned.
@@ -2040,15 +1866,15 @@ const STORE_NAME = 'firebase-heartbeat-store';
 let dbPromise = null;
 function getDbPromise() {
     if (!dbPromise) {
-        dbPromise = openDb(DB_NAME, DB_VERSION, upgradeDB => {
+        dbPromise = openDB(DB_NAME, DB_VERSION, (db, oldVersion) => {
             // We don't use 'break' in this switch statement, the fall-through
             // behavior is what we want, because if there are multiple versions between
             // the old version and the current version, we want ALL the migrations
             // that correspond to those versions to run, not only the last one.
             // eslint-disable-next-line default-case
-            switch (upgradeDB.oldVersion) {
+            switch (oldVersion) {
                 case 0:
-                    upgradeDB.createObjectStore(STORE_NAME);
+                    db.createObjectStore(STORE_NAME);
             }
         }).catch(e => {
             throw ERROR_FACTORY.create("storage-open" /* STORAGE_OPEN */, {
@@ -2082,19 +1908,6 @@ async function writeHeartbeatsToIndexedDB(app, heartbeatObject) {
     }
     catch (e) {
         throw ERROR_FACTORY.create("storage-set" /* STORAGE_WRITE */, {
-            originalErrorMessage: e.message
-        });
-    }
-}
-async function deleteHeartbeatsFromIndexedDB(app) {
-    try {
-        const db = await getDbPromise();
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        await tx.objectStore(STORE_NAME).delete(computeKey(app));
-        return tx.complete;
-    }
-    catch (e) {
-        throw ERROR_FACTORY.create("storage-delete" /* STORAGE_DELETE */, {
             originalErrorMessage: e.message
         });
     }
@@ -2155,21 +1968,23 @@ class HeartbeatServiceImpl {
             .getImmediate();
         // This is the "Firebase user agent" string from the platform logger
         // service, not the browser user agent.
-        const userAgent = platformLogger.getPlatformInfoString();
+        const agent = platformLogger.getPlatformInfoString();
         const date = getUTCDateString();
         if (this._heartbeatsCache === null) {
             this._heartbeatsCache = await this._heartbeatsCachePromise;
         }
-        if (this._heartbeatsCache.some(singleDateHeartbeat => singleDateHeartbeat.date === date)) {
-            // Do not store a heartbeat if one is already stored for this day.
+        // Do not store a heartbeat if one is already stored for this day
+        // or if a header has already been sent today.
+        if (this._heartbeatsCache.lastSentHeartbeatDate === date ||
+            this._heartbeatsCache.heartbeats.some(singleDateHeartbeat => singleDateHeartbeat.date === date)) {
             return;
         }
         else {
             // There is no entry for this date. Create one.
-            this._heartbeatsCache.push({ date, userAgent });
+            this._heartbeatsCache.heartbeats.push({ date, agent });
         }
         // Remove entries older than 30 days.
-        this._heartbeatsCache = this._heartbeatsCache.filter(singleDateHeartbeat => {
+        this._heartbeatsCache.heartbeats = this._heartbeatsCache.heartbeats.filter(singleDateHeartbeat => {
             const hbTimestamp = new Date(singleDateHeartbeat.date).valueOf();
             const now = Date.now();
             return now - hbTimestamp <= STORED_HEARTBEAT_RETENTION_MAX_MILLIS;
@@ -2180,31 +1995,36 @@ class HeartbeatServiceImpl {
      * Returns a base64 encoded string which can be attached to the heartbeat-specific header directly.
      * It also clears all heartbeats from memory as well as in IndexedDB.
      *
-     * NOTE: It will read heartbeats from the heartbeatsCache, instead of from indexedDB to reduce latency
+     * NOTE: Consuming product SDKs should not send the header if this method
+     * returns an empty string.
      */
     async getHeartbeatsHeader() {
         if (this._heartbeatsCache === null) {
             await this._heartbeatsCachePromise;
         }
-        // If it's still null, it's been cleared and has not been repopulated.
-        if (this._heartbeatsCache === null) {
+        // If it's still null or the array is empty, there is no data to send.
+        if (this._heartbeatsCache === null ||
+            this._heartbeatsCache.heartbeats.length === 0) {
             return '';
         }
+        const date = getUTCDateString();
         // Extract as many heartbeats from the cache as will fit under the size limit.
-        const { heartbeatsToSend, unsentEntries } = extractHeartbeatsForHeader(this._heartbeatsCache);
-        const headerString = base64Encode(JSON.stringify({ version: 2, heartbeats: heartbeatsToSend }));
+        const { heartbeatsToSend, unsentEntries } = extractHeartbeatsForHeader(this._heartbeatsCache.heartbeats);
+        const headerString = base64urlEncodeWithoutPadding(JSON.stringify({ version: 2, heartbeats: heartbeatsToSend }));
+        // Store last sent date to prevent another being logged/sent for the same day.
+        this._heartbeatsCache.lastSentHeartbeatDate = date;
         if (unsentEntries.length > 0) {
             // Store any unsent entries if they exist.
-            this._heartbeatsCache = unsentEntries;
-            // This seems more likely than deleteAll (below) to lead to some odd state
+            this._heartbeatsCache.heartbeats = unsentEntries;
+            // This seems more likely than emptying the array (below) to lead to some odd state
             // since the cache isn't empty and this will be called again on the next request,
             // and is probably safest if we await it.
             await this._storage.overwrite(this._heartbeatsCache);
         }
         else {
-            this._heartbeatsCache = null;
+            this._heartbeatsCache.heartbeats = [];
             // Do not wait for this, to reduce latency.
-            void this._storage.deleteAll();
+            void this._storage.overwrite(this._heartbeatsCache);
         }
         return headerString;
     }
@@ -2222,11 +2042,11 @@ function extractHeartbeatsForHeader(heartbeatsCache, maxSize = MAX_HEADER_BYTES)
     let unsentEntries = heartbeatsCache.slice();
     for (const singleDateHeartbeat of heartbeatsCache) {
         // Look for an existing entry with the same user agent.
-        const heartbeatEntry = heartbeatsToSend.find(hb => hb.userAgent === singleDateHeartbeat.userAgent);
+        const heartbeatEntry = heartbeatsToSend.find(hb => hb.agent === singleDateHeartbeat.agent);
         if (!heartbeatEntry) {
             // If no entry for this user agent exists, create one.
             heartbeatsToSend.push({
-                userAgent: singleDateHeartbeat.userAgent,
+                agent: singleDateHeartbeat.agent,
                 dates: [singleDateHeartbeat.date]
             });
             if (countBytes(heartbeatsToSend) > maxSize) {
@@ -2275,57 +2095,44 @@ class HeartbeatStorageImpl {
     async read() {
         const canUseIndexedDB = await this._canUseIndexedDBPromise;
         if (!canUseIndexedDB) {
-            return [];
+            return { heartbeats: [] };
         }
         else {
             const idbHeartbeatObject = await readHeartbeatsFromIndexedDB(this.app);
-            return (idbHeartbeatObject === null || idbHeartbeatObject === void 0 ? void 0 : idbHeartbeatObject.heartbeats) || [];
+            return idbHeartbeatObject || { heartbeats: [] };
         }
     }
     // overwrite the storage with the provided heartbeats
-    async overwrite(heartbeats) {
+    async overwrite(heartbeatsObject) {
+        var _a;
         const canUseIndexedDB = await this._canUseIndexedDBPromise;
         if (!canUseIndexedDB) {
             return;
         }
         else {
-            return writeHeartbeatsToIndexedDB(this.app, { heartbeats });
+            const existingHeartbeatsObject = await this.read();
+            return writeHeartbeatsToIndexedDB(this.app, {
+                lastSentHeartbeatDate: (_a = heartbeatsObject.lastSentHeartbeatDate) !== null && _a !== void 0 ? _a : existingHeartbeatsObject.lastSentHeartbeatDate,
+                heartbeats: heartbeatsObject.heartbeats
+            });
         }
     }
     // add heartbeats
-    async add(heartbeats) {
+    async add(heartbeatsObject) {
+        var _a;
         const canUseIndexedDB = await this._canUseIndexedDBPromise;
         if (!canUseIndexedDB) {
             return;
         }
         else {
-            const existingHeartbeats = await this.read();
+            const existingHeartbeatsObject = await this.read();
             return writeHeartbeatsToIndexedDB(this.app, {
-                heartbeats: [...existingHeartbeats, ...heartbeats]
+                lastSentHeartbeatDate: (_a = heartbeatsObject.lastSentHeartbeatDate) !== null && _a !== void 0 ? _a : existingHeartbeatsObject.lastSentHeartbeatDate,
+                heartbeats: [
+                    ...existingHeartbeatsObject.heartbeats,
+                    ...heartbeatsObject.heartbeats
+                ]
             });
-        }
-    }
-    // delete heartbeats
-    async delete(heartbeats) {
-        const canUseIndexedDB = await this._canUseIndexedDBPromise;
-        if (!canUseIndexedDB) {
-            return;
-        }
-        else {
-            const existingHeartbeats = await this.read();
-            return writeHeartbeatsToIndexedDB(this.app, {
-                heartbeats: existingHeartbeats.filter(existingHeartbeat => !heartbeats.includes(existingHeartbeat))
-            });
-        }
-    }
-    // delete all heartbeats
-    async deleteAll() {
-        const canUseIndexedDB = await this._canUseIndexedDBPromise;
-        if (!canUseIndexedDB) {
-            return;
-        }
-        else {
-            return deleteHeartbeatsFromIndexedDB(this.app);
         }
     }
 }
@@ -2336,7 +2143,7 @@ class HeartbeatStorageImpl {
  */
 function countBytes(heartbeatsCache) {
     // base64 has a restricted set of characters, all of which should be 1 byte.
-    return base64Encode(
+    return base64urlEncodeWithoutPadding(
     // heartbeatsCache wrapper properties
     JSON.stringify({ version: 2, heartbeats: heartbeatsCache })).length;
 }
@@ -2377,7 +2184,7 @@ function registerCoreComponents(variant) {
 registerCoreComponents('');
 
 var name = "firebase";
-var version = "9.6.8";
+var version = "9.6.9";
 
 /**
  * @license

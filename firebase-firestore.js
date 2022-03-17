@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, _getProvider, getApp, _removeServiceInstance, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js';
+import { _registerComponent, registerVersion, _getProvider, getApp, _removeServiceInstance, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js';
 
 /**
  * @license
@@ -979,7 +979,7 @@ C.MOCK_USER = new C("mock-user");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-let x = "9.6.8";
+let x = "9.6.9";
 
 /**
  * @license
@@ -16795,7 +16795,7 @@ class nc {
  */ (t));
     }
     /**
-     * The {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} associated with this `Firestore` service
+     * The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} associated with this `Firestore` service
      * instance.
      */    get app() {
         if (!this._app) throw new Q(G.FAILED_PRECONDITION, "Firestore was not initialized using the Firebase SDK. 'app' is not available");
@@ -17420,7 +17420,7 @@ class gc extends sc {
  * {@link getFirestore}. If the custom settings are empty, this function is
  * equivalent to calling {@link getFirestore}.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} with which the {@link Firestore} instance will
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} with which the {@link Firestore} instance will
  * be associated.
  * @param settings - A settings object to configure the {@link Firestore} instance.
  * @returns A newly initialized {@link Firestore} instance.
@@ -17439,10 +17439,10 @@ class gc extends sc {
 
 /**
  * Returns the existing {@link Firestore} instance that is associated with the
- * provided {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp}. If no instance exists, initializes a new
+ * provided {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp}. If no instance exists, initializes a new
  * instance with default settings.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} instance that the returned {@link Firestore}
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} instance that the returned {@link Firestore}
  * instance is associated with.
  * @returns The {@link Firestore} instance of the provided app.
  */ function pc(e = getApp()) {
@@ -19881,9 +19881,9 @@ function _l(t, e) {
         return n = Object.assign({
             useFetchStreams: e
         }, n), i._setSettings(n), i;
-    }), "PUBLIC")), registerVersion(D, "3.4.5", t), 
+    }), "PUBLIC")), registerVersion(D, "3.4.6", t), 
     // BUILD_TARGET will be replaced by values like esm5, esm2017, cjs5, etc during the compilation
-    registerVersion(D, "3.4.5", "esm2017");
+    registerVersion(D, "3.4.6", "esm2017");
 }();
 
 export { Bh as AbstractUserDataWriter, Mc as Bytes, mc as CACHE_SIZE_UNLIMITED, ac as CollectionReference, rc as DocumentReference, _h as DocumentSnapshot, Nc as FieldPath, Oc as FieldValue, gc as Firestore, Q as FirestoreError, $c as GeoPoint, wc as LoadBundleTask, oc as Query, Ih as QueryConstraint, wh as QueryDocumentSnapshot, mh as QuerySnapshot, dh as SnapshotMetadata, ut as Timestamp, rl as Transaction, Uh as WriteBatch, vt as _DatabaseId, xt as _DocumentKey, et as _EmptyAppCheckTokenProvider, z as _EmptyAuthCredentialsProvider, mt as _FieldPath, tc as _cast, U as _debugAssert, yt as _isBase64Available, F as _logWarn, dl as _setIndexConfiguration, Ju as _validateIsNotUsedTogether, tl as addDoc, hl as arrayRemove, cl as arrayUnion, bc as clearIndexedDbPersistence, uc as collection, cc as collectionGroup, ic as connectFirestoreEmulator, Zh as deleteDoc, al as deleteField, vc as disableNetwork, hc as doc, kc as documentId, Ec as enableIndexedDbPersistence, Ac as enableMultiTabIndexedDbPersistence, Vc as enableNetwork, kh as endAt, Nh as endBefore, Ic as ensureFirestoreConfigured, sl as executeWrite, Gh as getDoc, jh as getDocFromCache, Wh as getDocFromServer, zh as getDocs, Hh as getDocsFromCache, Jh as getDocsFromServer, pc as getFirestore, ll as increment, yc as initializeFirestore, Vh as limit, vh as limitToLast, Dc as loadBundle, Cc as namedQuery, el as onSnapshot, nl as onSnapshotsInSync, bh as orderBy, Th as query, fc as queryEqual, lc as refEqual, ol as runTransaction, ul as serverTimestamp, Yh as setDoc, M as setLogLevel, yh as snapshotEqual, Ch as startAfter, Dh as startAt, Sc as terminate, Xh as updateDoc, Pc as waitForPendingWrites, Ah as where, fl as writeBatch };

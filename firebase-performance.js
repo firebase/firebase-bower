@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js';
 
 /**
  * @license
@@ -235,6 +235,124 @@ function getModularInstance(service) {
 
 /**
  * @license
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+function promisifyRequest(request, errorMessage) {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = event => {
+            resolve(event.target.result);
+        };
+        request.onerror = event => {
+            var _a;
+            reject(`${errorMessage}: ${(_a = event.target.error) === null || _a === void 0 ? void 0 : _a.message}`);
+        };
+    });
+}
+class DBWrapper {
+    constructor(_db) {
+        this._db = _db;
+        this.objectStoreNames = this._db.objectStoreNames;
+    }
+    transaction(storeNames, mode) {
+        return new TransactionWrapper(this._db.transaction.call(this._db, storeNames, mode));
+    }
+    createObjectStore(storeName, options) {
+        return new ObjectStoreWrapper(this._db.createObjectStore(storeName, options));
+    }
+    close() {
+        this._db.close();
+    }
+}
+class TransactionWrapper {
+    constructor(_transaction) {
+        this._transaction = _transaction;
+        this.complete = new Promise((resolve, reject) => {
+            this._transaction.oncomplete = function () {
+                resolve();
+            };
+            this._transaction.onerror = () => {
+                reject(this._transaction.error);
+            };
+            this._transaction.onabort = () => {
+                reject(this._transaction.error);
+            };
+        });
+    }
+    objectStore(storeName) {
+        return new ObjectStoreWrapper(this._transaction.objectStore(storeName));
+    }
+}
+class ObjectStoreWrapper {
+    constructor(_store) {
+        this._store = _store;
+    }
+    index(name) {
+        return new IndexWrapper(this._store.index(name));
+    }
+    createIndex(name, keypath, options) {
+        return new IndexWrapper(this._store.createIndex(name, keypath, options));
+    }
+    get(key) {
+        const request = this._store.get(key);
+        return promisifyRequest(request, 'Error reading from IndexedDB');
+    }
+    put(value, key) {
+        const request = this._store.put(value, key);
+        return promisifyRequest(request, 'Error writing to IndexedDB');
+    }
+    delete(key) {
+        const request = this._store.delete(key);
+        return promisifyRequest(request, 'Error deleting from IndexedDB');
+    }
+    clear() {
+        const request = this._store.clear();
+        return promisifyRequest(request, 'Error clearing IndexedDB object store');
+    }
+}
+class IndexWrapper {
+    constructor(_index) {
+        this._index = _index;
+    }
+    get(key) {
+        const request = this._index.get(key);
+        return promisifyRequest(request, 'Error reading from IndexedDB');
+    }
+}
+function openDB(dbName, dbVersion, upgradeCallback) {
+    return new Promise((resolve, reject) => {
+        try {
+            const request = indexedDB.open(dbName, dbVersion);
+            request.onsuccess = event => {
+                resolve(new DBWrapper(event.target.result));
+            };
+            request.onerror = event => {
+                var _a;
+                reject(`Error opening indexedDB: ${(_a = event.target.error) === null || _a === void 0 ? void 0 : _a.message}`);
+            };
+            request.onupgradeneeded = event => {
+                upgradeCallback(new DBWrapper(request.result), event.oldVersion, event.newVersion, new TransactionWrapper(request.transaction));
+            };
+        }
+        catch (e) {
+            reject(`Error opening indexedDB: ${e.message}`);
+        }
+    });
+}
+
+/**
+ * @license
  * Copyright 2017 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -429,308 +547,8 @@ class Component {
     }
 }
 
-function toArray(arr) {
-  return Array.prototype.slice.call(arr);
-}
-
-function promisifyRequest(request) {
-  return new Promise(function(resolve, reject) {
-    request.onsuccess = function() {
-      resolve(request.result);
-    };
-
-    request.onerror = function() {
-      reject(request.error);
-    };
-  });
-}
-
-function promisifyRequestCall(obj, method, args) {
-  var request;
-  var p = new Promise(function(resolve, reject) {
-    request = obj[method].apply(obj, args);
-    promisifyRequest(request).then(resolve, reject);
-  });
-
-  p.request = request;
-  return p;
-}
-
-function promisifyCursorRequestCall(obj, method, args) {
-  var p = promisifyRequestCall(obj, method, args);
-  return p.then(function(value) {
-    if (!value) return;
-    return new Cursor(value, p.request);
-  });
-}
-
-function proxyProperties(ProxyClass, targetProp, properties) {
-  properties.forEach(function(prop) {
-    Object.defineProperty(ProxyClass.prototype, prop, {
-      get: function() {
-        return this[targetProp][prop];
-      },
-      set: function(val) {
-        this[targetProp][prop] = val;
-      }
-    });
-  });
-}
-
-function proxyRequestMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return promisifyRequestCall(this[targetProp], prop, arguments);
-    };
-  });
-}
-
-function proxyMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return this[targetProp][prop].apply(this[targetProp], arguments);
-    };
-  });
-}
-
-function proxyCursorRequestMethods(ProxyClass, targetProp, Constructor, properties) {
-  properties.forEach(function(prop) {
-    if (!(prop in Constructor.prototype)) return;
-    ProxyClass.prototype[prop] = function() {
-      return promisifyCursorRequestCall(this[targetProp], prop, arguments);
-    };
-  });
-}
-
-function Index(index) {
-  this._index = index;
-}
-
-proxyProperties(Index, '_index', [
-  'name',
-  'keyPath',
-  'multiEntry',
-  'unique'
-]);
-
-proxyRequestMethods(Index, '_index', IDBIndex, [
-  'get',
-  'getKey',
-  'getAll',
-  'getAllKeys',
-  'count'
-]);
-
-proxyCursorRequestMethods(Index, '_index', IDBIndex, [
-  'openCursor',
-  'openKeyCursor'
-]);
-
-function Cursor(cursor, request) {
-  this._cursor = cursor;
-  this._request = request;
-}
-
-proxyProperties(Cursor, '_cursor', [
-  'direction',
-  'key',
-  'primaryKey',
-  'value'
-]);
-
-proxyRequestMethods(Cursor, '_cursor', IDBCursor, [
-  'update',
-  'delete'
-]);
-
-// proxy 'next' methods
-['advance', 'continue', 'continuePrimaryKey'].forEach(function(methodName) {
-  if (!(methodName in IDBCursor.prototype)) return;
-  Cursor.prototype[methodName] = function() {
-    var cursor = this;
-    var args = arguments;
-    return Promise.resolve().then(function() {
-      cursor._cursor[methodName].apply(cursor._cursor, args);
-      return promisifyRequest(cursor._request).then(function(value) {
-        if (!value) return;
-        return new Cursor(value, cursor._request);
-      });
-    });
-  };
-});
-
-function ObjectStore(store) {
-  this._store = store;
-}
-
-ObjectStore.prototype.createIndex = function() {
-  return new Index(this._store.createIndex.apply(this._store, arguments));
-};
-
-ObjectStore.prototype.index = function() {
-  return new Index(this._store.index.apply(this._store, arguments));
-};
-
-proxyProperties(ObjectStore, '_store', [
-  'name',
-  'keyPath',
-  'indexNames',
-  'autoIncrement'
-]);
-
-proxyRequestMethods(ObjectStore, '_store', IDBObjectStore, [
-  'put',
-  'add',
-  'delete',
-  'clear',
-  'get',
-  'getAll',
-  'getKey',
-  'getAllKeys',
-  'count'
-]);
-
-proxyCursorRequestMethods(ObjectStore, '_store', IDBObjectStore, [
-  'openCursor',
-  'openKeyCursor'
-]);
-
-proxyMethods(ObjectStore, '_store', IDBObjectStore, [
-  'deleteIndex'
-]);
-
-function Transaction(idbTransaction) {
-  this._tx = idbTransaction;
-  this.complete = new Promise(function(resolve, reject) {
-    idbTransaction.oncomplete = function() {
-      resolve();
-    };
-    idbTransaction.onerror = function() {
-      reject(idbTransaction.error);
-    };
-    idbTransaction.onabort = function() {
-      reject(idbTransaction.error);
-    };
-  });
-}
-
-Transaction.prototype.objectStore = function() {
-  return new ObjectStore(this._tx.objectStore.apply(this._tx, arguments));
-};
-
-proxyProperties(Transaction, '_tx', [
-  'objectStoreNames',
-  'mode'
-]);
-
-proxyMethods(Transaction, '_tx', IDBTransaction, [
-  'abort'
-]);
-
-function UpgradeDB(db, oldVersion, transaction) {
-  this._db = db;
-  this.oldVersion = oldVersion;
-  this.transaction = new Transaction(transaction);
-}
-
-UpgradeDB.prototype.createObjectStore = function() {
-  return new ObjectStore(this._db.createObjectStore.apply(this._db, arguments));
-};
-
-proxyProperties(UpgradeDB, '_db', [
-  'name',
-  'version',
-  'objectStoreNames'
-]);
-
-proxyMethods(UpgradeDB, '_db', IDBDatabase, [
-  'deleteObjectStore',
-  'close'
-]);
-
-function DB(db) {
-  this._db = db;
-}
-
-DB.prototype.transaction = function() {
-  return new Transaction(this._db.transaction.apply(this._db, arguments));
-};
-
-proxyProperties(DB, '_db', [
-  'name',
-  'version',
-  'objectStoreNames'
-]);
-
-proxyMethods(DB, '_db', IDBDatabase, [
-  'close'
-]);
-
-// Add cursor iterators
-// TODO: remove this once browsers do the right thing with promises
-['openCursor', 'openKeyCursor'].forEach(function(funcName) {
-  [ObjectStore, Index].forEach(function(Constructor) {
-    // Don't create iterateKeyCursor if openKeyCursor doesn't exist.
-    if (!(funcName in Constructor.prototype)) return;
-
-    Constructor.prototype[funcName.replace('open', 'iterate')] = function() {
-      var args = toArray(arguments);
-      var callback = args[args.length - 1];
-      var nativeObject = this._store || this._index;
-      var request = nativeObject[funcName].apply(nativeObject, args.slice(0, -1));
-      request.onsuccess = function() {
-        callback(request.result);
-      };
-    };
-  });
-});
-
-// polyfill getAll
-[Index, ObjectStore].forEach(function(Constructor) {
-  if (Constructor.prototype.getAll) return;
-  Constructor.prototype.getAll = function(query, count) {
-    var instance = this;
-    var items = [];
-
-    return new Promise(function(resolve) {
-      instance.iterateCursor(query, function(cursor) {
-        if (!cursor) {
-          resolve(items);
-          return;
-        }
-        items.push(cursor.value);
-
-        if (count !== undefined && items.length == count) {
-          resolve(items);
-          return;
-        }
-        cursor.continue();
-      });
-    });
-  };
-});
-
-function openDb(name, version, upgradeCallback) {
-  var p = promisifyRequestCall(indexedDB, 'open', [name, version]);
-  var request = p.request;
-
-  if (request) {
-    request.onupgradeneeded = function(event) {
-      if (upgradeCallback) {
-        upgradeCallback(new UpgradeDB(request.result, event.oldVersion, request.transaction));
-      }
-    };
-  }
-
-  return p.then(function(db) {
-    return new DB(db);
-  });
-}
-
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.5";
+const version$1 = "0.5.6";
 
 /**
  * @license
@@ -873,9 +691,19 @@ function getAuthorizationHeader(refreshToken) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-async function createInstallationRequest(appConfig, { fid }) {
+async function createInstallationRequest({ appConfig, heartbeatServiceProvider }, { fid }) {
     const endpoint = getInstallationsEndpoint(appConfig);
     const headers = getHeaders(appConfig);
+    // If heartbeat service exists, add the heartbeat string to the header.
+    const heartbeatService = heartbeatServiceProvider.getImmediate({
+        optional: true
+    });
+    if (heartbeatService) {
+        const heartbeatsHeader = await heartbeatService.getHeartbeatsHeader();
+        if (heartbeatsHeader) {
+            headers.append('x-firebase-client', heartbeatsHeader);
+        }
+    }
     const body = {
         fid,
         authVersion: INTERNAL_AUTH_VERSION,
@@ -1097,15 +925,15 @@ const OBJECT_STORE_NAME = 'firebase-installations-store';
 let dbPromise = null;
 function getDbPromise() {
     if (!dbPromise) {
-        dbPromise = openDb(DATABASE_NAME, DATABASE_VERSION, upgradeDB => {
+        dbPromise = openDB(DATABASE_NAME, DATABASE_VERSION, (db, oldVersion) => {
             // We don't use 'break' in this switch statement, the fall-through
             // behavior is what we want, because if there are multiple versions between
             // the old version and the current version, we want ALL the migrations
             // that correspond to those versions to run, not only the last one.
             // eslint-disable-next-line default-case
-            switch (upgradeDB.oldVersion) {
+            switch (oldVersion) {
                 case 0:
-                    upgradeDB.createObjectStore(OBJECT_STORE_NAME);
+                    db.createObjectStore(OBJECT_STORE_NAME);
             }
         });
     }
@@ -1117,7 +945,7 @@ async function set(appConfig, value) {
     const db = await getDbPromise();
     const tx = db.transaction(OBJECT_STORE_NAME, 'readwrite');
     const objectStore = tx.objectStore(OBJECT_STORE_NAME);
-    const oldValue = await objectStore.get(key);
+    const oldValue = (await objectStore.get(key));
     await objectStore.put(value, key);
     await tx.complete;
     if (!oldValue || oldValue.fid !== value.fid) {
@@ -1144,7 +972,7 @@ async function update(appConfig, updateFn) {
     const db = await getDbPromise();
     const tx = db.transaction(OBJECT_STORE_NAME, 'readwrite');
     const store = tx.objectStore(OBJECT_STORE_NAME);
-    const oldValue = await store.get(key);
+    const oldValue = (await store.get(key));
     const newValue = updateFn(oldValue);
     if (newValue === undefined) {
         await store.delete(key);
@@ -1179,11 +1007,11 @@ async function update(appConfig, updateFn) {
  * Updates and returns the InstallationEntry from the database.
  * Also triggers a registration request if it is necessary and possible.
  */
-async function getInstallationEntry(appConfig) {
+async function getInstallationEntry(installations) {
     let registrationPromise;
-    const installationEntry = await update(appConfig, oldEntry => {
+    const installationEntry = await update(installations.appConfig, oldEntry => {
         const installationEntry = updateOrCreateInstallationEntry(oldEntry);
-        const entryWithPromise = triggerRegistrationIfNecessary(appConfig, installationEntry);
+        const entryWithPromise = triggerRegistrationIfNecessary(installations, installationEntry);
         registrationPromise = entryWithPromise.registrationPromise;
         return entryWithPromise.installationEntry;
     });
@@ -1214,7 +1042,7 @@ function updateOrCreateInstallationEntry(oldEntry) {
  * If registrationPromise does not exist, the installationEntry is guaranteed
  * to be registered.
  */
-function triggerRegistrationIfNecessary(appConfig, installationEntry) {
+function triggerRegistrationIfNecessary(installations, installationEntry) {
     if (installationEntry.registrationStatus === 0 /* NOT_STARTED */) {
         if (!navigator.onLine) {
             // Registration required but app is offline.
@@ -1230,13 +1058,13 @@ function triggerRegistrationIfNecessary(appConfig, installationEntry) {
             registrationStatus: 1 /* IN_PROGRESS */,
             registrationTime: Date.now()
         };
-        const registrationPromise = registerInstallation(appConfig, inProgressEntry);
+        const registrationPromise = registerInstallation(installations, inProgressEntry);
         return { installationEntry: inProgressEntry, registrationPromise };
     }
     else if (installationEntry.registrationStatus === 1 /* IN_PROGRESS */) {
         return {
             installationEntry,
-            registrationPromise: waitUntilFidRegistration(appConfig)
+            registrationPromise: waitUntilFidRegistration(installations)
         };
     }
     else {
@@ -1244,20 +1072,20 @@ function triggerRegistrationIfNecessary(appConfig, installationEntry) {
     }
 }
 /** This will be executed only once for each new Firebase Installation. */
-async function registerInstallation(appConfig, installationEntry) {
+async function registerInstallation(installations, installationEntry) {
     try {
-        const registeredInstallationEntry = await createInstallationRequest(appConfig, installationEntry);
-        return set(appConfig, registeredInstallationEntry);
+        const registeredInstallationEntry = await createInstallationRequest(installations, installationEntry);
+        return set(installations.appConfig, registeredInstallationEntry);
     }
     catch (e) {
         if (isServerError(e) && e.customData.serverCode === 409) {
             // Server returned a "FID can not be used" error.
             // Generate a new ID next time.
-            await remove(appConfig);
+            await remove(installations.appConfig);
         }
         else {
             // Registration failed. Set FID as not registered.
-            await set(appConfig, {
+            await set(installations.appConfig, {
                 fid: installationEntry.fid,
                 registrationStatus: 0 /* NOT_STARTED */
             });
@@ -1266,19 +1094,19 @@ async function registerInstallation(appConfig, installationEntry) {
     }
 }
 /** Call if FID registration is pending in another request. */
-async function waitUntilFidRegistration(appConfig) {
+async function waitUntilFidRegistration(installations) {
     // Unfortunately, there is no way of reliably observing when a value in
     // IndexedDB changes (yet, see https://github.com/WICG/indexed-db-observers),
     // so we need to poll.
-    let entry = await updateInstallationRequest(appConfig);
+    let entry = await updateInstallationRequest(installations.appConfig);
     while (entry.registrationStatus === 1 /* IN_PROGRESS */) {
         // createInstallation request still in progress.
         await sleep(100);
-        entry = await updateInstallationRequest(appConfig);
+        entry = await updateInstallationRequest(installations.appConfig);
     }
     if (entry.registrationStatus === 0 /* NOT_STARTED */) {
         // The request timed out or failed in a different call. Try again.
-        const { installationEntry, registrationPromise } = await getInstallationEntry(appConfig);
+        const { installationEntry, registrationPromise } = await getInstallationEntry(installations);
         if (registrationPromise) {
             return registrationPromise;
         }
@@ -1335,19 +1163,23 @@ function hasInstallationRequestTimedOut(installationEntry) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-async function generateAuthTokenRequest({ appConfig, platformLoggerProvider }, installationEntry) {
+async function generateAuthTokenRequest({ appConfig, heartbeatServiceProvider }, installationEntry) {
     const endpoint = getGenerateAuthTokenEndpoint(appConfig, installationEntry);
     const headers = getHeadersWithAuth(appConfig, installationEntry);
-    // If platform logger exists, add the platform info string to the header.
-    const platformLogger = platformLoggerProvider.getImmediate({
+    // If heartbeat service exists, add the heartbeat string to the header.
+    const heartbeatService = heartbeatServiceProvider.getImmediate({
         optional: true
     });
-    if (platformLogger) {
-        headers.append('x-firebase-client', platformLogger.getPlatformInfoString());
+    if (heartbeatService) {
+        const heartbeatsHeader = await heartbeatService.getHeartbeatsHeader();
+        if (heartbeatsHeader) {
+            headers.append('x-firebase-client', heartbeatsHeader);
+        }
     }
     const body = {
         installation: {
-            sdkVersion: PACKAGE_VERSION
+            sdkVersion: PACKAGE_VERSION,
+            appId: appConfig.appId
         }
     };
     const request = {
@@ -1539,7 +1371,7 @@ function hasAuthTokenRequestTimedOut(authToken) {
  */
 async function getId(installations) {
     const installationsImpl = installations;
-    const { installationEntry, registrationPromise } = await getInstallationEntry(installationsImpl.appConfig);
+    const { installationEntry, registrationPromise } = await getInstallationEntry(installationsImpl);
     if (registrationPromise) {
         registrationPromise.catch(console.error);
     }
@@ -1577,14 +1409,14 @@ async function getId(installations) {
  */
 async function getToken(installations, forceRefresh = false) {
     const installationsImpl = installations;
-    await completeInstallationRegistration(installationsImpl.appConfig);
+    await completeInstallationRegistration(installationsImpl);
     // At this point we either have a Registered Installation in the DB, or we've
     // already thrown an error.
     const authToken = await refreshAuthToken(installationsImpl, forceRefresh);
     return authToken.token;
 }
-async function completeInstallationRegistration(appConfig) {
-    const { registrationPromise } = await getInstallationEntry(appConfig);
+async function completeInstallationRegistration(installations) {
+    const { registrationPromise } = await getInstallationEntry(installations);
     if (registrationPromise) {
         // A createInstallation request is in progress. Wait until it finishes.
         await registrationPromise;
@@ -1660,11 +1492,11 @@ const publicFactory = (container) => {
     const app = container.getProvider('app').getImmediate();
     // Throws if app isn't configured properly.
     const appConfig = extractAppConfig(app);
-    const platformLoggerProvider = _getProvider(app, 'platform-logger');
+    const heartbeatServiceProvider = _getProvider(app, 'heartbeat');
     const installationsImpl = {
         app,
         appConfig,
-        platformLoggerProvider,
+        heartbeatServiceProvider,
         _delete: () => Promise.resolve()
     };
     return installationsImpl;
@@ -1695,7 +1527,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/performance";
-const version = "0.5.5";
+const version = "0.5.6";
 
 /**
  * @license
@@ -3119,7 +2951,7 @@ class PerformanceController {
 const DEFAULT_ENTRY_NAME = '[DEFAULT]';
 /**
  * Returns a {@link FirebasePerformance} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} to use.
  * @public
  */
 function getPerformance(app = getApp()) {
@@ -3130,7 +2962,7 @@ function getPerformance(app = getApp()) {
 }
 /**
  * Returns a {@link FirebasePerformance} instance for the given app. Can only be called once.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.8/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} to use.
  * @param settings - Optional settings for the {@link FirebasePerformance} instance.
  * @public
  */
