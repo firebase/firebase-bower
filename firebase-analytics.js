@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
 
 /**
  * @license
@@ -478,6 +478,9 @@ function getModularInstance(service) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * @internal
+ */
 function promisifyRequest(request, errorMessage) {
     return new Promise((resolve, reject) => {
         request.onsuccess = event => {
@@ -489,6 +492,9 @@ function promisifyRequest(request, errorMessage) {
         };
     });
 }
+/**
+ * @internal
+ */
 class DBWrapper {
     constructor(_db) {
         this._db = _db;
@@ -504,6 +510,9 @@ class DBWrapper {
         this._db.close();
     }
 }
+/**
+ * @internal
+ */
 class TransactionWrapper {
     constructor(_transaction) {
         this._transaction = _transaction;
@@ -523,6 +532,9 @@ class TransactionWrapper {
         return new ObjectStoreWrapper(this._transaction.objectStore(storeName));
     }
 }
+/**
+ * @internal
+ */
 class ObjectStoreWrapper {
     constructor(_store) {
         this._store = _store;
@@ -550,6 +562,9 @@ class ObjectStoreWrapper {
         return promisifyRequest(request, 'Error clearing IndexedDB object store');
     }
 }
+/**
+ * @internal
+ */
 class IndexWrapper {
     constructor(_index) {
         this._index = _index;
@@ -559,6 +574,9 @@ class IndexWrapper {
         return promisifyRequest(request, 'Error reading from IndexedDB');
     }
 }
+/**
+ * @internal
+ */
 function openDB(dbName, dbVersion, upgradeCallback) {
     return new Promise((resolve, reject) => {
         try {
@@ -621,7 +639,7 @@ class Component {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.6";
+const version$1 = "0.5.7";
 
 /**
  * @license
@@ -2536,7 +2554,7 @@ async function setAnalyticsCollectionEnabled$1(initializationPromise, enabled) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} to use.
  */
 function getAnalytics(app = getApp()) {
     app = getModularInstance(app);
@@ -2552,7 +2570,7 @@ function getAnalytics(app = getApp()) {
  *
  * @public
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.9/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} to use.
  */
 function initializeAnalytics(app, options = {}) {
     // Dependencies
@@ -2661,7 +2679,7 @@ function logEvent(analyticsInstance, eventName, eventParams, options) {
 }
 
 const name = "@firebase/analytics";
-const version = "0.7.6";
+const version = "0.7.7";
 
 /**
  * Firebase Analytics
