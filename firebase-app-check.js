@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
 
 /**
  * @license
@@ -1384,7 +1384,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check');
 
 /**
  * @license
@@ -1820,8 +1820,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js-check";
-const version = "0.5.5";
+const name = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check";
+const version = "0.5.6";
 
 /**
  * @license
@@ -2229,7 +2229,7 @@ function throwIfThrottled(throttleData) {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */

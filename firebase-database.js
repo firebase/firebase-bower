@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
 
 /**
  * @license
@@ -1367,7 +1367,7 @@ class Logger {
 }
 
 const name = "@firebase/database";
-const version = "0.12.7";
+const version = "0.12.8";
 
 /**
  * @license
@@ -13214,7 +13214,7 @@ const parseRepoInfo = function (dataURL, nodeAdmin) {
     }
     const webSocketOnly = parsedUrl.scheme === 'ws' || parsedUrl.scheme === 'wss';
     return {
-        repoInfo: new RepoInfo(parsedUrl.host, parsedUrl.secure, namespace, nodeAdmin, webSocketOnly, 
+        repoInfo: new RepoInfo(parsedUrl.host, parsedUrl.secure, namespace, webSocketOnly, nodeAdmin, 
         /*persistenceKey=*/ '', 
         /*includeNamespaceInQueryParams=*/ namespace !== parsedUrl.subdomain),
         path: new Path(parsedUrl.pathString)
@@ -14846,7 +14846,7 @@ function repoManagerDatabaseFromApp(app, authProvider, appCheckProvider, url, no
     let repoInfo = parsedUrl.repoInfo;
     let isEmulator;
     let dbEmulatorHost = undefined;
-    if (typeof process !== 'undefined') {
+    if (typeof process !== 'undefined' && process.env) {
         dbEmulatorHost = process.env[FIREBASE_DATABASE_EMULATOR_HOST_VAR];
     }
     if (dbEmulatorHost) {
@@ -14915,7 +14915,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -14953,11 +14953,11 @@ class Database {
 }
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.

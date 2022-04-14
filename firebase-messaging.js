@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
 
 /**
  * @license
@@ -237,7 +237,7 @@ class DBWrapper {
         this._db = _db;
         this.objectStoreNames = this._db.objectStoreNames;
     }
-    transaction(storeNames, mode) {
+    transaction(storeNames, mode = 'readonly') {
         return new TransactionWrapper(this._db.transaction.call(this._db, storeNames, mode));
     }
     createObjectStore(storeName, options) {
@@ -396,7 +396,7 @@ class Component {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.7";
+const version$1 = "0.5.8";
 
 /**
  * @license
@@ -2355,7 +2355,7 @@ async function messageEventListener(messaging, event) {
 }
 
 const name = "@firebase/messaging";
-const version = "0.9.11";
+const version = "0.9.12";
 
 /**
  * @license

@@ -579,7 +579,7 @@ class DBWrapper {
         this._db = _db;
         this.objectStoreNames = this._db.objectStoreNames;
     }
-    transaction(storeNames, mode) {
+    transaction(storeNames, mode = 'readonly') {
         return new TransactionWrapper(this._db.transaction.call(this._db, storeNames, mode));
     }
     createObjectStore(storeName, options) {
@@ -1352,8 +1352,8 @@ function isVersionServiceProvider(provider) {
     return (component === null || component === void 0 ? void 0 : component.type) === "VERSION" /* VERSION */;
 }
 
-const name$o = "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-const version$1 = "0.7.20";
+const name$o = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+const version$1 = "0.7.21";
 
 /**
  * @license
@@ -1371,17 +1371,17 @@ const version$1 = "0.7.20";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js');
 
-const name$n = "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js-compat";
+const name$n = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-compat";
 
 const name$m = "@firebase/analytics-compat";
 
 const name$l = "@firebase/analytics";
 
-const name$k = "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js-check-compat";
+const name$k = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check-compat";
 
-const name$j = "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js-check";
+const name$j = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check";
 
 const name$i = "@firebase/auth";
 
@@ -1420,7 +1420,7 @@ const name$2 = "@firebase/firestore";
 const name$1 = "@firebase/firestore-compat";
 
 const name$p = "firebase";
-const version$2 = "9.6.10";
+const version$2 = "9.6.11";
 
 /**
  * @license
@@ -1731,7 +1731,7 @@ function initializeApp(options, rawConfig = {}) {
     return newApp;
 }
 /**
- * Retrieves a {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} instance.
+ * Retrieves a {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} instance.
  *
  * When called with no arguments, the default app is returned. When an app name
  * is provided, the app corresponding to that name is returned.
@@ -2202,7 +2202,7 @@ function registerCoreComponents(variant) {
 registerCoreComponents('');
 
 var name = "firebase";
-var version = "9.6.10";
+var version = "9.6.11";
 
 /**
  * @license

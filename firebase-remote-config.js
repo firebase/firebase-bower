@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp, SDK_VERSION } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
 
 /**
  * @license
@@ -291,7 +291,7 @@ class DBWrapper {
         this._db = _db;
         this.objectStoreNames = this._db.objectStoreNames;
     }
-    transaction(storeNames, mode) {
+    transaction(storeNames, mode = 'readonly') {
         return new TransactionWrapper(this._db.transaction.call(this._db, storeNames, mode));
     }
     createObjectStore(storeName, options) {
@@ -586,7 +586,7 @@ class Logger {
 }
 
 const name$1 = "@firebase/installations";
-const version$1 = "0.5.7";
+const version$1 = "0.5.8";
 
 /**
  * @license
@@ -1565,7 +1565,7 @@ registerVersion(name$1, version$1);
 registerVersion(name$1, version$1, 'esm2017');
 
 const name = "@firebase/remote-config";
-const version = "0.3.6";
+const version = "0.3.7";
 
 /**
  * @license
@@ -1731,7 +1731,7 @@ class Value {
  */
 /**
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js#FirebaseApp} instance.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} instance.
  * @returns A {@link RemoteConfig} instance.
  *
  * @public
