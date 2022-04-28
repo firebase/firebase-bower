@@ -1,4 +1,4 @@
-import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
+import { registerVersion, _registerComponent, _getProvider, getApp } from 'https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js';
 
 /**
  * @license
@@ -2969,7 +2969,7 @@ class PerformanceController {
 const DEFAULT_ENTRY_NAME = '[DEFAULT]';
 /**
  * Returns a {@link FirebasePerformance} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} to use.
  * @public
  */
 function getPerformance(app = getApp()) {
@@ -2980,7 +2980,7 @@ function getPerformance(app = getApp()) {
 }
 /**
  * Returns a {@link FirebasePerformance} instance for the given app. Can only be called once.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} to use.
  * @param settings - Optional settings for the {@link FirebasePerformance} instance.
  * @public
  */

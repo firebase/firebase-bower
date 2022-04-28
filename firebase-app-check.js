@@ -1,4 +1,4 @@
-import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
+import { _getProvider, getApp, _registerComponent, registerVersion } from 'https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js';
 
 /**
  * @license
@@ -913,8 +913,8 @@ function getDebugState() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const BASE_ENDPOINT = 'https://content-firebaseappcheck.googleapis.com/v1beta';
-const EXCHANGE_RECAPTCHA_TOKEN_METHOD = 'exchangeRecaptchaToken';
+const BASE_ENDPOINT = 'https://content-firebaseappcheck.googleapis.com/v1';
+const EXCHANGE_RECAPTCHA_TOKEN_METHOD = 'exchangeRecaptchaV3Token';
 const EXCHANGE_RECAPTCHA_ENTERPRISE_TOKEN_METHOD = 'exchangeRecaptchaEnterpriseToken';
 const EXCHANGE_DEBUG_TOKEN_METHOD = 'exchangeDebugToken';
 const TOKEN_REFRESH_TIME = {
@@ -1215,7 +1215,7 @@ async function exchangeToken({ url, body }, heartbeatServiceProvider) {
     const timeToLiveAsNumber = Number(match[1]) * 1000;
     const now = Date.now();
     return {
-        token: responseBody.attestationToken,
+        token: responseBody.token,
         expireTimeMillis: now + timeToLiveAsNumber,
         issuedAtTimeMillis: now
     };
@@ -1225,7 +1225,7 @@ function getExchangeRecaptchaV3TokenRequest(app, reCAPTCHAToken) {
     return {
         url: `${BASE_ENDPOINT}/projects/${projectId}/apps/${appId}:${EXCHANGE_RECAPTCHA_TOKEN_METHOD}?key=${apiKey}`,
         body: {
-            'recaptcha_token': reCAPTCHAToken
+            'recaptcha_v3_token': reCAPTCHAToken
         }
     };
 }
@@ -1384,7 +1384,7 @@ function computeKey(app) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const logger = new Logger('https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check');
+const logger = new Logger('https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js-check');
 
 /**
  * @license
@@ -1820,8 +1820,8 @@ function internalFactory(appCheck) {
     };
 }
 
-const name = "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js-check";
-const version = "0.5.6";
+const name = "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js-check";
+const version = "0.5.7";
 
 /**
  * @license
@@ -2229,7 +2229,7 @@ function throwIfThrottled(throttleData) {
  */
 /**
  * Activate App Check for the given app. Can be called only once per app.
- * @param app - the {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} to activate App Check for
+ * @param app - the {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} to activate App Check for
  * @param options - App Check initialization options
  * @public
  */

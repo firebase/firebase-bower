@@ -1,4 +1,4 @@
-import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js';
+import { _registerComponent, registerVersion, getApp, _getProvider } from 'https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js';
 
 /**
  * @license
@@ -671,6 +671,16 @@ function httpsCallable$1(functionsInstance, name, options) {
     });
 }
 /**
+ * Returns a reference to the callable https trigger with the given url.
+ * @param url - The url of the trigger.
+ * @public
+ */
+function httpsCallableFromURL$1(functionsInstance, url, options) {
+    return (data => {
+        return callAtURL(functionsInstance, url, data, options || {});
+    });
+}
+/**
  * Does an HTTP POST and returns the completed response.
  * @param url The url to post to.
  * @param body The JSON body of the post.
@@ -714,8 +724,16 @@ async function postJSON(url, body, headers, fetchImpl) {
  * @param name The name of the callable trigger.
  * @param data The data to pass as params to the function.s
  */
-async function call(functionsInstance, name, data, options) {
+function call(functionsInstance, name, data, options) {
     const url = functionsInstance._url(name);
+    return callAtURL(functionsInstance, url, data, options);
+}
+/**
+ * Calls a callable function asynchronously and returns the result.
+ * @param url The url of the callable trigger.
+ * @param data The data to pass as params to the function.s
+ */
+async function callAtURL(functionsInstance, url, data, options) {
     // Encode any special types, such as dates, in the input data.
     data = encode(data);
     const body = { data };
@@ -769,7 +787,7 @@ async function call(functionsInstance, name, data, options) {
 }
 
 const name = "@firebase/functions";
-const version = "0.7.11";
+const version = "0.8.0";
 
 /**
  * @license
@@ -824,7 +842,7 @@ function registerFunctions(fetchImpl, variant) {
  */
 /**
  * Returns a {@link Functions} instance for the given app.
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js#FirebaseApp} to use.
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} to use.
  * @param regionOrCustomDomain - one of:
  *   a) The region the callable functions are located in (ex: us-central1)
  *   b) A custom domain hosting the callable functions (ex: https://mydomain.com)
@@ -858,6 +876,14 @@ function connectFunctionsEmulator(functionsInstance, host, port) {
 function httpsCallable(functionsInstance, name, options) {
     return httpsCallable$1(getModularInstance(functionsInstance), name, options);
 }
+/**
+ * Returns a reference to the callable HTTPS trigger with the specified url.
+ * @param url - The url of the trigger.
+ * @public
+ */
+function httpsCallableFromURL(functionsInstance, url, options) {
+    return httpsCallableFromURL$1(getModularInstance(functionsInstance), url, options);
+}
 
 /**
  * Cloud Functions for Firebase
@@ -866,6 +892,6 @@ function httpsCallable(functionsInstance, name, options) {
  */
 registerFunctions(fetch.bind(self));
 
-export { connectFunctionsEmulator, getFunctions, httpsCallable };
+export { connectFunctionsEmulator, getFunctions, httpsCallable, httpsCallableFromURL };
 
 //# sourceMappingURL=firebase-functions.js.map
