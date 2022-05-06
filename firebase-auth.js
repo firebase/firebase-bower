@@ -1,4 +1,4 @@
-import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js';
+import { _getProvider, _registerComponent, SDK_VERSION, registerVersion, getApp } from 'https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js';
 
 /**
  * @license
@@ -1225,6 +1225,7 @@ function _debugErrorMap() {
             'Please fix by going to the Auth email templates section in the Firebase Console.',
         ["invalid-verification-id" /* INVALID_SESSION_INFO */]: 'The verification ID used to create the phone auth credential is invalid.',
         ["invalid-tenant-id" /* INVALID_TENANT_ID */]: "The Auth instance's tenant ID is invalid.",
+        ["login-blocked" /* LOGIN_BLOCKED */]: "Login blocked by user-provided method: {$originalMessage}",
         ["missing-android-pkg-name" /* MISSING_ANDROID_PACKAGE_NAME */]: 'An Android Package Name must be provided if the Android App is required to be installed.',
         ["auth-domain-config-required" /* MISSING_AUTH_DOMAIN */]: 'Be sure to include authDomain when calling firebase.initializeApp(), ' +
             'by following the instructions in the Firebase console.',
@@ -3141,6 +3142,83 @@ function _getClientVersion(clientPlatform, frameworks = []) {
 
 /**
  * @license
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+class AuthMiddlewareQueue {
+    constructor(auth) {
+        this.auth = auth;
+        this.queue = [];
+    }
+    pushCallback(callback, onAbort) {
+        // The callback could be sync or async. Wrap it into a
+        // function that is always async.
+        const wrappedCallback = (user) => new Promise((resolve, reject) => {
+            try {
+                const result = callback(user);
+                // Either resolve with existing promise or wrap a non-promise
+                // return value into a promise.
+                resolve(result);
+            }
+            catch (e) {
+                // Sync callback throws.
+                reject(e);
+            }
+        });
+        // Attach the onAbort if present
+        wrappedCallback.onAbort = onAbort;
+        this.queue.push(wrappedCallback);
+        const index = this.queue.length - 1;
+        return () => {
+            // Unsubscribe. Replace with no-op. Do not remove from array, or it will disturb
+            // indexing of other elements.
+            this.queue[index] = () => Promise.resolve();
+        };
+    }
+    async runMiddleware(nextUser) {
+        if (this.auth.currentUser === nextUser) {
+            return;
+        }
+        // While running the middleware, build a temporary stack of onAbort
+        // callbacks to call if one middleware callback rejects.
+        const onAbortStack = [];
+        try {
+            for (const beforeStateCallback of this.queue) {
+                await beforeStateCallback(nextUser);
+                // Only push the onAbort if the callback succeeds
+                if (beforeStateCallback.onAbort) {
+                    onAbortStack.push(beforeStateCallback.onAbort);
+                }
+            }
+        }
+        catch (e) {
+            // Run all onAbort, with separate try/catch to ignore any errors and
+            // continue
+            onAbortStack.reverse();
+            for (const onAbort of onAbortStack) {
+                try {
+                    onAbort();
+                }
+                catch (_) { /* swallow error */ }
+            }
+            throw this.auth._errorFactory.create("login-blocked" /* LOGIN_BLOCKED */, { originalMessage: e.message });
+        }
+    }
+}
+
+/**
+ * @license
  * Copyright 2020 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3165,6 +3243,7 @@ class AuthImpl {
         this.operations = Promise.resolve();
         this.authStateSubscription = new Subscription(this);
         this.idTokenSubscription = new Subscription(this);
+        this.beforeStateQueue = new AuthMiddlewareQueue(this);
         this.redirectUser = null;
         this.isProactiveRefreshEnabled = false;
         // Any network calls will set this to true and prevent subsequent emulator
@@ -3241,16 +3320,19 @@ class AuthImpl {
             return;
         }
         // Update current Auth state. Either a new login or logout.
-        await this._updateCurrentUser(user);
+        // Skip blocking callbacks, they should not apply to a change in another tab.
+        await this._updateCurrentUser(user, /* skipBeforeStateCallbacks */ true);
     }
     async initializeCurrentUser(popupRedirectResolver) {
         var _a;
         // First check to see if we have a pending redirect event.
-        let storedUser = (await this.assertedPersistence.getCurrentUser());
+        const previouslyStoredUser = (await this.assertedPersistence.getCurrentUser());
+        let futureCurrentUser = previouslyStoredUser;
+        let needsTocheckMiddleware = false;
         if (popupRedirectResolver && this.config.authDomain) {
             await this.getOrInitRedirectPersistenceManager();
             const redirectUserEventId = (_a = this.redirectUser) === null || _a === void 0 ? void 0 : _a._redirectEventId;
-            const storedUserEventId = storedUser === null || storedUser === void 0 ? void 0 : storedUser._redirectEventId;
+            const storedUserEventId = futureCurrentUser === null || futureCurrentUser === void 0 ? void 0 : futureCurrentUser._redirectEventId;
             const result = await this.tryRedirectSignIn(popupRedirectResolver);
             // If the stored user (i.e. the old "currentUser") has a redirectId that
             // matches the redirect user, then we want to initially sign in with the
@@ -3258,18 +3340,34 @@ class AuthImpl {
             // TODO(samgho): More thoroughly test all of this
             if ((!redirectUserEventId || redirectUserEventId === storedUserEventId) &&
                 (result === null || result === void 0 ? void 0 : result.user)) {
-                storedUser = result.user;
+                futureCurrentUser = result.user;
+                needsTocheckMiddleware = true;
             }
         }
         // If no user in persistence, there is no current user. Set to null.
-        if (!storedUser) {
+        if (!futureCurrentUser) {
             return this.directlySetCurrentUser(null);
         }
-        if (!storedUser._redirectEventId) {
-            // This isn't a redirect user, we can reload and bail
-            // This will also catch the redirected user, if available, as that method
-            // strips the _redirectEventId
-            return this.reloadAndSetCurrentUserOrClear(storedUser);
+        if (!futureCurrentUser._redirectEventId) {
+            // This isn't a redirect link operation, we can reload and bail.
+            // First though, ensure that we check the middleware is happy.
+            if (needsTocheckMiddleware) {
+                try {
+                    await this.beforeStateQueue.runMiddleware(futureCurrentUser);
+                }
+                catch (e) {
+                    futureCurrentUser = previouslyStoredUser;
+                    // We know this is available since the bit is only set when the
+                    // resolver is available
+                    this._popupRedirectResolver._overrideRedirectResult(this, () => Promise.reject(e));
+                }
+            }
+            if (futureCurrentUser) {
+                return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
+            }
+            else {
+                return this.directlySetCurrentUser(null);
+            }
         }
         _assert(this._popupRedirectResolver, this, "argument-error" /* ARGUMENT_ERROR */);
         await this.getOrInitRedirectPersistenceManager();
@@ -3277,10 +3375,10 @@ class AuthImpl {
         // DO NOT reload the current user, otherwise they'll be cleared from storage.
         // This is important for the reauthenticateWithRedirect() flow.
         if (this.redirectUser &&
-            this.redirectUser._redirectEventId === storedUser._redirectEventId) {
-            return this.directlySetCurrentUser(storedUser);
+            this.redirectUser._redirectEventId === futureCurrentUser._redirectEventId) {
+            return this.directlySetCurrentUser(futureCurrentUser);
         }
-        return this.reloadAndSetCurrentUserOrClear(storedUser);
+        return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
     }
     async tryRedirectSignIn(redirectResolver) {
         // The redirect user needs to be checked (and signed in if available)
@@ -3341,12 +3439,15 @@ class AuthImpl {
         }
         return this._updateCurrentUser(user && user._clone(this));
     }
-    async _updateCurrentUser(user) {
+    async _updateCurrentUser(user, skipBeforeStateCallbacks = false) {
         if (this._deleted) {
             return;
         }
         if (user) {
             _assert(this.tenantId === user.tenantId, this, "tenant-id-mismatch" /* TENANT_ID_MISMATCH */);
+        }
+        if (!skipBeforeStateCallbacks) {
+            await this.beforeStateQueue.runMiddleware(user);
         }
         return this.queue(async () => {
             await this.directlySetCurrentUser(user);
@@ -3354,11 +3455,15 @@ class AuthImpl {
         });
     }
     async signOut() {
+        // Run first, to block _setRedirectUser() if any callbacks fail.
+        await this.beforeStateQueue.runMiddleware(null);
         // Clear the redirect user when signOut is called
         if (this.redirectPersistenceManager || this._popupRedirectResolver) {
             await this._setRedirectUser(null);
         }
-        return this._updateCurrentUser(null);
+        // Prevent callbacks from being called again in _updateCurrentUser, as
+        // they were already called in the first line.
+        return this._updateCurrentUser(null, /* skipBeforeStateCallbacks */ true);
     }
     setPersistence(persistence) {
         return this.queue(async () => {
@@ -3373,6 +3478,9 @@ class AuthImpl {
     }
     onAuthStateChanged(nextOrObserver, error, completed) {
         return this.registerStateListener(this.authStateSubscription, nextOrObserver, error, completed);
+    }
+    beforeAuthStateChanged(callback, onAbort) {
+        return this.beforeStateQueue.pushCallback(callback, onAbort);
     }
     onIdTokenChanged(nextOrObserver, error, completed) {
         return this.registerStateListener(this.idTokenSubscription, nextOrObserver, error, completed);
@@ -6583,6 +6691,19 @@ function onIdTokenChanged(auth, nextOrObserver, error, completed) {
     return getModularInstance(auth).onIdTokenChanged(nextOrObserver, error, completed);
 }
 /**
+ * Adds a blocking callback that runs before an auth state change
+ * sets a new user.
+ *
+ * @param auth - The {@link Auth} instance.
+ * @param callback - callback triggered before new user value is set.
+ *   If this throws, it blocks the user from being set.
+ * @param onAbort - callback triggered if a later `beforeAuthStateChanged()`
+ *   callback throws, allowing you to undo any side effects.
+ */
+function beforeAuthStateChanged(auth, callback, onAbort) {
+    return getModularInstance(auth).beforeAuthStateChanged(callback, onAbort);
+}
+/**
  * Adds an observer for changes to the user's sign-in state.
  *
  * @remarks
@@ -9209,6 +9330,9 @@ async function _getAndClearPendingRedirectStatus(resolver, auth) {
 async function _setPendingRedirectStatus(resolver, auth) {
     return resolverPersistence(resolver)._set(pendingRedirectKey(auth), 'true');
 }
+function _overrideRedirectResult(auth, result) {
+    redirectOutcomeMap.set(auth._key(), result);
+}
 function resolverPersistence(resolver) {
     return _getInstance(resolver._redirectPersistence);
 }
@@ -10013,6 +10137,7 @@ class BrowserPopupRedirectResolver {
         this.originValidationPromises = {};
         this._redirectPersistence = browserSessionPersistence;
         this._completeRedirectFn = _getRedirectResult;
+        this._overrideRedirectResult = _overrideRedirectResult;
     }
     // Wrapping in async even though we don't await anywhere in order
     // to make sure errors are raised as promise rejections
@@ -10162,7 +10287,7 @@ class PhoneMultiFactorGenerator {
 PhoneMultiFactorGenerator.FACTOR_ID = 'phone';
 
 var name = "@firebase/auth";
-var version = "0.19.12";
+var version = "0.20.0";
 
 /**
  * @license
@@ -10329,7 +10454,7 @@ function registerAuth(clientPlatform) {
  * limitations under the License.
  */
 /**
- * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp}.
+ * Returns the Auth instance associated with the provided {@link https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js#FirebaseApp}.
  * If no instance exists, initializes an Auth instance with platform-specific default dependencies.
  *
  * @param app - The Firebase App.
@@ -10352,6 +10477,6 @@ function getAuth(app = getApp()) {
 }
 registerAuth("Browser" /* BROWSER */);
 
-export { ActionCodeOperation, ActionCodeURL, AuthCredential, AUTH_ERROR_CODES_MAP_DO_NOT_USE_INTERNALLY as AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TwitterAuthProvider, applyActionCode, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, verifyBeforeUpdateEmail, verifyPasswordResetCode };
+export { ActionCodeOperation, ActionCodeURL, AuthCredential, AUTH_ERROR_CODES_MAP_DO_NOT_USE_INTERNALLY as AuthErrorCodes, EmailAuthCredential, EmailAuthProvider, FacebookAuthProvider, FactorId, GithubAuthProvider, GoogleAuthProvider, OAuthCredential, OAuthProvider, OperationType, PhoneAuthCredential, PhoneAuthProvider, PhoneMultiFactorGenerator, ProviderId, RecaptchaVerifier, SAMLAuthProvider, SignInMethod, TwitterAuthProvider, applyActionCode, beforeAuthStateChanged, browserLocalPersistence, browserPopupRedirectResolver, browserSessionPersistence, checkActionCode, confirmPasswordReset, connectAuthEmulator, createUserWithEmailAndPassword, debugErrorMap, deleteUser, fetchSignInMethodsForEmail, getAdditionalUserInfo, getAuth, getIdToken, getIdTokenResult, getMultiFactorResolver, getRedirectResult, inMemoryPersistence, indexedDBLocalPersistence, initializeAuth, isSignInWithEmailLink, linkWithCredential, linkWithPhoneNumber, linkWithPopup, linkWithRedirect, multiFactor, onAuthStateChanged, onIdTokenChanged, parseActionCodeURL, prodErrorMap, reauthenticateWithCredential, reauthenticateWithPhoneNumber, reauthenticateWithPopup, reauthenticateWithRedirect, reload, sendEmailVerification, sendPasswordResetEmail, sendSignInLinkToEmail, setPersistence, signInAnonymously, signInWithCredential, signInWithCustomToken, signInWithEmailAndPassword, signInWithEmailLink, signInWithPhoneNumber, signInWithPopup, signInWithRedirect, signOut, unlink, updateCurrentUser, updateEmail, updatePassword, updatePhoneNumber, updateProfile, useDeviceLanguage, verifyBeforeUpdateEmail, verifyPasswordResetCode };
 
 //# sourceMappingURL=firebase-auth.js.map

@@ -1,4 +1,4 @@
-import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js';
+import { getApp, _getProvider, _registerComponent, registerVersion, SDK_VERSION as SDK_VERSION$1 } from 'https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js';
 
 /**
  * @license
@@ -1367,7 +1367,7 @@ class Logger {
 }
 
 const name = "@firebase/database";
-const version = "0.12.8";
+const version = "0.13.0";
 
 /**
  * @license
@@ -3152,7 +3152,7 @@ class WebSocketConnection {
         this.bytesReceived = 0;
         this.log_ = logWrapper(this.connId);
         this.stats_ = statsManagerGetCollection(repoInfo);
-        this.connURL = WebSocketConnection.connectionURL_(repoInfo, transportSessionId, lastSessionId, appCheckToken);
+        this.connURL = WebSocketConnection.connectionURL_(repoInfo, transportSessionId, lastSessionId, appCheckToken, applicationId);
         this.nodeAdmin = repoInfo.nodeAdmin;
     }
     /**
@@ -3162,7 +3162,7 @@ class WebSocketConnection {
      * @param lastSessionId - Optional lastSessionId if there was a previous connection
      * @returns connection url
      */
-    static connectionURL_(repoInfo, transportSessionId, lastSessionId, appCheckToken) {
+    static connectionURL_(repoInfo, transportSessionId, lastSessionId, appCheckToken, applicationId) {
         const urlParams = {};
         urlParams[VERSION_PARAM] = PROTOCOL_VERSION;
         if (typeof location !== 'undefined' &&
@@ -3179,6 +3179,9 @@ class WebSocketConnection {
         if (appCheckToken) {
             urlParams[APP_CHECK_TOKEN_PARAM] = appCheckToken;
         }
+        if (applicationId) {
+            urlParams[APPLICATION_ID_PARAM] = applicationId;
+        }
         return repoInfoConnectionURL(repoInfo, WEBSOCKET, urlParams);
     }
     /**
@@ -3193,16 +3196,9 @@ class WebSocketConnection {
         // Assume failure until proven otherwise.
         PersistentStorage.set('previous_websocket_failure', true);
         try {
+            let options;
             if (isNodeSdk()) ;
-            else {
-                const options = {
-                    headers: {
-                        'X-Firebase-GMPID': this.applicationId || '',
-                        'X-Firebase-AppCheck': this.appCheckToken || ''
-                    }
-                };
-                this.mySock = new WebSocketImpl(this.connURL, [], options);
-            }
+            this.mySock = new WebSocketImpl(this.connURL, [], options);
         }
         catch (e) {
             this.log_('Error instantiating WebSocket.');
@@ -3456,6 +3452,13 @@ class TransportManager {
     static get ALL_TRANSPORTS() {
         return [BrowserPollConnection, WebSocketConnection];
     }
+    /**
+     * Returns whether transport has been selected to ensure WebSocketConnection or BrowserPollConnection are not called after
+     * TransportManager has already set up transports_
+     */
+    static get IS_TRANSPORT_INITIALIZED() {
+        return this.globalTransportInitialized_;
+    }
     initTransports_(repoInfo) {
         const isWebSocketsAvailable = WebSocketConnection && WebSocketConnection['isAvailable']();
         let isSkipPollConnection = isWebSocketsAvailable && !WebSocketConnection.previouslyFailed();
@@ -3475,6 +3478,7 @@ class TransportManager {
                     transports.push(transport);
                 }
             }
+            TransportManager.globalTransportInitialized_ = true;
         }
     }
     /**
@@ -3500,6 +3504,8 @@ class TransportManager {
         }
     }
 }
+// Keeps track of whether the TransportManager has already chosen a transport to use
+TransportManager.globalTransportInitialized_ = false;
 
 /**
  * @license
@@ -14915,7 +14921,7 @@ function repoManagerForceRestClient(forceRestClient) {
 class Database {
     /** @hideconstructor */
     constructor(_repoInternal, 
-    /** The {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
+    /** The {@link https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js#FirebaseApp} associated with this Realtime Database instance. */
     app) {
         this._repoInternal = _repoInternal;
         this.app = app;
@@ -14951,13 +14957,33 @@ class Database {
         }
     }
 }
+function checkTransportInit() {
+    if (TransportManager.IS_TRANSPORT_INITIALIZED) {
+        warn('Transport has already been initialized. Please call this function before calling ref or setting up a listener');
+    }
+}
+/**
+ * Force the use of websockets instead of longPolling.
+ */
+function forceWebSockets() {
+    checkTransportInit();
+    BrowserPollConnection.forceDisallow();
+}
+/**
+ * Force the use of longPolling instead of websockets. This will be ignored if websocket protocol is used in databaseURL.
+ */
+function forceLongPolling() {
+    checkTransportInit();
+    WebSocketConnection.forceDisallow();
+    BrowserPollConnection.forceAllow();
+}
 /**
  * Returns the instance of the Realtime Database SDK that is associated
- * with the provided {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
+ * with the provided {@link https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js#FirebaseApp}. Initializes a new instance with
  * with default settings if no instance exists or if the existing instance uses
  * a custom database URL.
  *
- * @param app - The {@link https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
+ * @param app - The {@link https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js#FirebaseApp} instance that the returned Realtime
  * Database instance is associated with.
  * @param url - The URL of the Realtime Database instance to connect to. If not
  * provided, the SDK connects to the default instance of the Firebase App.
@@ -15254,6 +15280,6 @@ const forceRestClient = function (forceRestClient) {
  */
 registerDatabase();
 
-export { DataSnapshot, Database, OnDisconnect, QueryConstraint, TransactionResult, QueryImpl as _QueryImpl, QueryParams as _QueryParams, ReferenceImpl as _ReferenceImpl, forceRestClient as _TEST_ACCESS_forceRestClient, hijackHash as _TEST_ACCESS_hijackHash, repoManagerDatabaseFromApp as _repoManagerDatabaseFromApp, setSDKVersion as _setSDKVersion, validatePathString as _validatePathString, validateWritablePath as _validateWritablePath, child, connectDatabaseEmulator, enableLogging, endAt, endBefore, equalTo, get, getDatabase, goOffline, goOnline, increment, limitToFirst, limitToLast, off, onChildAdded, onChildChanged, onChildMoved, onChildRemoved, onDisconnect, onValue, orderByChild, orderByKey, orderByPriority, orderByValue, push, query, ref, refFromURL, remove, runTransaction, serverTimestamp, set, setPriority, setWithPriority, startAfter, startAt, update };
+export { DataSnapshot, Database, OnDisconnect, QueryConstraint, TransactionResult, QueryImpl as _QueryImpl, QueryParams as _QueryParams, ReferenceImpl as _ReferenceImpl, forceRestClient as _TEST_ACCESS_forceRestClient, hijackHash as _TEST_ACCESS_hijackHash, repoManagerDatabaseFromApp as _repoManagerDatabaseFromApp, setSDKVersion as _setSDKVersion, validatePathString as _validatePathString, validateWritablePath as _validateWritablePath, child, connectDatabaseEmulator, enableLogging, endAt, endBefore, equalTo, forceLongPolling, forceWebSockets, get, getDatabase, goOffline, goOnline, increment, limitToFirst, limitToLast, off, onChildAdded, onChildChanged, onChildMoved, onChildRemoved, onDisconnect, onValue, orderByChild, orderByKey, orderByPriority, orderByValue, push, query, ref, refFromURL, remove, runTransaction, serverTimestamp, set, setPriority, setWithPriority, startAfter, startAt, update };
 
 //# sourceMappingURL=firebase-database.js.map
